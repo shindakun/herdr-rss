@@ -396,8 +396,16 @@ impl App {
         if self.items.is_empty() {
             return Ok(());
         }
-        self.column = Column::Article;
         self.article_scroll = 0;
+        self.focus_article()
+    }
+
+    /// Focus the article column and mark the shown item read.
+    fn focus_article(&mut self) -> Result<(), String> {
+        if self.items.is_empty() {
+            return Ok(());
+        }
+        self.column = Column::Article;
         self.set_read(self.item_sel, true)
     }
 
@@ -662,17 +670,20 @@ impl App {
                 self.article_scroll = 0;
                 Ok(())
             }
-            Column::Article => Ok(()),
+            Column::Article => self.focus_article(),
         }
     }
 
     /// Wheel: focus the column under the pointer, then move its selection
-    /// or scroll the article.
+    /// or scroll the article. Reaching the article this way reads it.
     pub fn wheel(&mut self, x: u16, y: u16, down: bool) -> Result<(), String> {
         let Some(col) = self.areas.column_at(x, y) else {
             return Ok(());
         };
         self.column = col;
+        if col == Column::Article {
+            self.focus_article()?;
+        }
         match (col, down) {
             (Column::Article, true) => {
                 self.article_scroll = self.article_scroll.saturating_add(3);
@@ -768,9 +779,28 @@ impl App {
         }
     }
 
+    /// True when `refresh_minutes` have passed since the last refresh and
+    /// none is running. `now` is unix seconds.
+    pub fn auto_refresh_due(&self, now: i64) -> bool {
+        if self.config.refresh_minutes == 0 || self.refreshing || self.env.is_none() {
+            return false;
+        }
+        let interval = self.config.refresh_minutes as i64 * 60;
+        match self.last_refresh {
+            Some(t) => now - t >= interval,
+            None => true,
+        }
+    }
+
     pub fn status_line(&self) -> String {
         if let Some(s) = &self.status {
             return s.clone();
+        }
+        if let Some(Row::Feed(i)) = self.rows.get(self.feed_sel) {
+            let f = &self.feeds[*i];
+            if let Some(err) = &f.last_error {
+                return format!("! {}: {err}", f.name);
+            }
         }
         let mut parts = vec![format!("{} unread", self.unread_total())];
         if self.refreshing {
@@ -1030,5 +1060,63 @@ mod tests {
         assert_eq!(a.status_line(), "4 unread");
         a.status = Some("hi".into());
         assert_eq!(a.status_line(), "hi");
+    }
+
+    #[test]
+    fn wheel_and_click_on_the_article_read_it() {
+        let mut a = app();
+        a.areas = Areas {
+            feeds: Rect::new(0, 0, 24, 20),
+            items: Rect::new(24, 0, 40, 20),
+            article: Rect::new(64, 0, 40, 20),
+        };
+        assert!(!a.items[0].read);
+        a.wheel(70, 5, true).unwrap();
+        assert_eq!(a.column, Column::Article);
+        assert!(a.items[0].read);
+        a.column = Column::Items;
+        a.down().unwrap();
+        a.click(70, 5).unwrap();
+        assert!(a.items[1].read);
+        assert_eq!(a.unread_total(), 2);
+    }
+
+    #[test]
+    fn failed_feed_shows_its_error_in_the_status() {
+        let mut a = app();
+        a.store
+            .record_fetch(
+                "https://a/feed",
+                time::now(),
+                &crate::store::FetchRecord::Failed("HTTP 503"),
+            )
+            .unwrap();
+        a.reload_feeds().unwrap();
+        a.column = Column::Feeds;
+        a.feed_sel = 3;
+        assert_eq!(a.status_line(), "! a: HTTP 503");
+        a.feed_sel = 4;
+        assert_eq!(a.status_line(), "4 unread · refreshed 0m ago");
+    }
+
+    #[test]
+    fn auto_refresh_timing() {
+        let mut a = app();
+        a.config.refresh_minutes = 30;
+        assert!(!a.auto_refresh_due(0), "not under herdr");
+        a.env = Some(PluginEnv {
+            config_dir: "/tmp".into(),
+            state_dir: "/tmp".into(),
+            bin_path: "herdr".into(),
+        });
+        assert!(a.auto_refresh_due(0), "never refreshed");
+        a.last_refresh = Some(1_000);
+        assert!(!a.auto_refresh_due(1_000 + 29 * 60));
+        assert!(a.auto_refresh_due(1_000 + 30 * 60));
+        a.refreshing = true;
+        assert!(!a.auto_refresh_due(1_000 + 60 * 60));
+        a.refreshing = false;
+        a.config.refresh_minutes = 0;
+        assert!(!a.auto_refresh_due(1_000 + 60 * 60));
     }
 }

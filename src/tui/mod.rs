@@ -58,6 +58,9 @@ fn event_loop(terminal: &mut ratatui::DefaultTerminal, app: &mut App) -> Result<
             }
         }
         app.poll_refresh()?;
+        if app.auto_refresh_due(crate::time::now()) {
+            app.refresh(true);
+        }
     }
     Ok(())
 }

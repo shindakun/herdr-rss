@@ -94,6 +94,8 @@ Three columns: feeds, items, article. Under 100 columns the pane shows one at a 
 | click | Focus and select; again on an item opens it, on a group folds it |
 | wheel | Focus the column under the pointer; move its list or scroll the article |
 
+Reaching the article by `Enter`, click, or wheel marks the item read. A feed with `!` failed its last fetch; select it and the status line shows the error. The pane refreshes on its own every `refresh_minutes`.
+
 Links in the article (the item link, `[text][n]` references, and the `[n]: url` footnotes) are real terminal hyperlinks, so Ctrl+click opens them in Herdr even when a URL wraps across rows.
 
 ## Configure

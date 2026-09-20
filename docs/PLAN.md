@@ -146,8 +146,11 @@ items (id PRIMARY KEY, feed_url, guid, title, link, author, published,
        summary_html, content_text, read, starred, fetched_at)
 ```
 
-- Refresh runs on a worker thread. The UI never blocks. A feed that fails
-  shows `!` in the feeds column and its error in the status line.
+- Refresh runs on a worker thread. The UI never blocks. While the pane is
+  open it refreshes every `refresh_minutes`, measured from the newest
+  fetch in the store, so a pane opened long after the startup hook
+  refreshes at once. A feed that fails shows `!` in the feeds column and
+  its error in the status line while it is selected.
 - Prune: after each refresh, delete unstarred items older than `keep_days`.
   Unknown items already older than that are not stored, so a refresh does
   not churn.
@@ -279,8 +282,9 @@ description = "open feeds full screen"
 3. Done. Manifest, split and zoomed launchers, startup hook, `refresh`
    action, skill file, release script. Linked and opened from a real Herdr
    session in both placements.
-4. Auto refresh every `refresh_minutes` while the pane is open. Show a
-   failed feed's error in the status line.
+4. Done. Auto refresh every `refresh_minutes` while the pane is open. A
+   failed feed's error shows in the status line while it is selected.
+   Wheel or click into the article marks the item read.
 5. `/` search, `a` add and `d` delete feed from the pane, OPML import and
    export.
 6. `f` full-article fetch through `dom_smoothie`. First release.

@@ -63,7 +63,19 @@ pub struct App {
     /// an index through the scroll offset.
     pub feeds_state: ListState,
     pub items_state: ListState,
+    /// URL-bearing cells of the last frame, painted as OSC 8 after the draw.
+    pub hyperlinks: Vec<Hyperlink>,
     refresh_rx: Option<Receiver<Result<RefreshReport, String>>>,
+}
+
+/// Text at a screen position that the terminal should treat as a link.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Hyperlink {
+    pub x: u16,
+    pub y: u16,
+    pub text: String,
+    pub url: String,
+    pub style: super::article::RowStyle,
 }
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -114,6 +126,7 @@ impl App {
             areas: Areas::default(),
             feeds_state: ListState::default(),
             items_state: ListState::default(),
+            hyperlinks: Vec::new(),
             refresh_rx: None,
         };
         app.reload_feeds()?;
@@ -520,13 +533,15 @@ impl App {
         }
     }
 
-    /// The `[n]: url` footnotes html2text appends to the body, in order.
-    /// Rendered very wide so no footnote wraps; numbering does not depend on
-    /// width, so it matches what the pane shows.
+    /// The `[n]: url` footnotes html2text appends to the body, in order,
+    /// made absolute against the item's link. Rendered very wide so no
+    /// footnote wraps; numbering does not depend on width, so it matches
+    /// what the pane shows.
     pub fn article_links(&self) -> Vec<String> {
         let Some(it) = self.selected_item() else {
             return Vec::new();
         };
+        let base = it.link.as_deref().and_then(|l| url::Url::parse(l).ok());
         let text = match (&it.content_text, &it.summary_html) {
             (Some(t), _) => t.clone(),
             (None, Some(h)) => html::to_text(h, 4000),
@@ -543,7 +558,13 @@ impl App {
             })
             .collect();
         links.sort_by_key(|(n, _)| *n);
-        links.into_iter().map(|(_, u)| u).collect()
+        links
+            .into_iter()
+            .map(|(_, u)| match &base {
+                Some(b) => b.join(&u).map(|j| j.to_string()).unwrap_or(u),
+                None => u,
+            })
+            .collect()
     }
 
     fn open_url(&mut self, link: &str) {
@@ -975,11 +996,20 @@ mod tests {
     #[test]
     fn numbered_links_come_from_the_footnotes() {
         let mut a = app();
+        a.items[0].link = Some("https://a/posts/1.html".into());
         a.items[0].summary_html = Some(
-            "<p>See <a href=\"https://x.example/one\">one</a> and <a href=\"https://x.example/two\">two</a>.</p>".into(),
+            "<p>See <a href=\"https://x.example/one\">one</a>, <a href=\"https://x.example/two\">two</a>, <a href=\"./three.html\">three</a>, <a href=\"/four\">four</a>.</p>".into(),
         );
         let links = a.article_links();
-        assert_eq!(links, ["https://x.example/one", "https://x.example/two"]);
+        assert_eq!(
+            links,
+            [
+                "https://x.example/one",
+                "https://x.example/two",
+                "https://a/posts/three.html",
+                "https://a/four"
+            ]
+        );
         assert!(
             a.article_text(20).lines().count() > 4,
             "narrow render wraps"
@@ -987,8 +1017,8 @@ mod tests {
         a.config.browser = Some("true".into());
         a.open_link(2);
         assert_eq!(a.status.as_deref(), Some("opened https://x.example/two"));
-        a.open_link(3);
-        assert_eq!(a.status.as_deref(), Some("no link [3]"));
+        a.open_link(5);
+        assert_eq!(a.status.as_deref(), Some("no link [5]"));
     }
 
     #[test]

@@ -67,8 +67,12 @@ Item rows: unread dot, feed short name, title, age. Sort is newest first.
 
 Article: title, feed, author, date, then the item body as text. HTML from
 the feed body goes through `html2text` at the column width. Links in the body
-are numbered `[1]` and listed at the end; `1`..`9` opens that link, since a
-URL wrapped across two rows cannot be clicked in the terminal. `f`
+are numbered `[1]` and listed at the end. Every row that carries a URL (the
+item link, a `[text][n]` reference, a footnote and its wrapped
+continuation) is repainted after the frame wrapped in OSC 8, so Ctrl+click
+in Herdr gets the whole URL even when it spans rows. Relative footnote URLs
+are resolved against the item link. `1`..`9` opens link `n` from the
+keyboard. `f`
 fetches the page and runs Readability extraction for feeds that ship only a
 summary.
 
@@ -197,6 +201,7 @@ herdr-rss/
       mod.rs               # terminal setup, event loop, refresh tick
       app.rs               # state and actions; tested against an in-memory store
       ui.rs                # feeds, items, article columns; status line; help
+      article.rs           # article rows with their hyperlink spans
       keys.rs              # key to action; HELP table
   tests/fixtures/          # pane_list.json; feed captures: rss2, atom, jsonfeed, broken
   .github/workflows/ci.yml # fmt, clippy, test, release build on ubuntu and macos; audit; md lint

@@ -4,10 +4,11 @@
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap};
+use ratatui::widgets::{Block, Borders, Clear, List, ListItem, Paragraph};
 use ratatui::Frame;
 
-use super::app::{App, Areas, Column, Row};
+use super::app::{App, Areas, Column, Hyperlink, Row};
+use super::article;
 use super::keys::HELP;
 use crate::time;
 
@@ -17,6 +18,7 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
     let area = frame.area();
     app.width = area.width;
     app.height = area.height;
+    app.hyperlinks.clear();
     let [main, status] = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).areas(area);
 
     if app.narrow() {
@@ -67,6 +69,9 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
     frame.render_widget(Paragraph::new(line), status);
 
     if app.show_help {
+        // The overlay covers the article; hyperlinks are repainted after the
+        // frame and would punch through it.
+        app.hyperlinks.clear();
         draw_help(frame, area);
     }
 }
@@ -209,36 +214,52 @@ fn draw_article(frame: &mut Frame, app: &mut App, area: Rect) {
         return;
     };
     let body = app.article_text(width.max(20));
+    let links = app.article_links();
     let mut meta = vec![it.feed_name.clone()];
     if let Some(a) = &it.author {
         meta.push(a.clone());
     }
     meta.push(time::date(it.published));
-    let mut lines = vec![
-        Line::styled(
-            it.title.clone(),
-            Style::default().add_modifier(Modifier::BOLD),
-        ),
-        Line::styled(meta.join(" · "), Style::default().fg(Color::DarkGray)),
-    ];
-    if let Some(l) = &it.link {
-        lines.push(Line::styled(l.clone(), Style::default().fg(Color::Blue)));
-    }
-    lines.push(Line::raw(""));
-    lines.extend(body.lines().map(|l| Line::raw(l.to_string())));
-    // The body is wrapped at `width` by html2text already; only the header
-    // lines can wrap, so a ceiling division per line is exact enough.
-    let w = width.max(1) as usize;
-    let total: usize = lines.iter().map(|l| l.width().max(1).div_ceil(w)).sum();
-    let para = Paragraph::new(lines).wrap(Wrap { trim: false });
-    let total = total.min(u16::MAX as usize) as u16;
+    let rows = article::layout(
+        &it.title,
+        &meta.join(" · "),
+        it.link.as_deref(),
+        &body,
+        &links,
+        width.max(20) as usize,
+    );
+
     let visible = area.height.saturating_sub(2);
-    let max_scroll = total.saturating_sub(visible);
+    let max_scroll = (rows.len() as u16).saturating_sub(visible);
     if app.article_scroll > max_scroll {
         app.article_scroll = max_scroll;
     }
+    let scroll = app.article_scroll as usize;
+    let lines: Vec<Line> = rows
+        .iter()
+        .map(|r| Line::styled(r.text.clone(), r.style.style()))
+        .collect();
+    for (i, r) in rows.iter().enumerate().skip(scroll).take(visible as usize) {
+        let y = area.y + 1 + (i - scroll) as u16;
+        for (x, len, url) in &r.links {
+            let text: String = r
+                .text
+                .chars()
+                .skip(*x as usize)
+                .take(*len as usize)
+                .collect();
+            app.hyperlinks.push(Hyperlink {
+                x: area.x + 1 + x,
+                y,
+                text,
+                url: url.clone(),
+                style: r.style,
+            });
+        }
+    }
     frame.render_widget(
-        para.block(block("Article", focused))
+        Paragraph::new(lines)
+            .block(block("Article", focused))
             .scroll((app.article_scroll, 0)),
         area,
     );

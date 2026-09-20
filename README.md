@@ -86,13 +86,15 @@ Three columns: feeds, items, article. Under 100 columns the pane shows one at a 
 | `s` | Toggle star |
 | `u` | Show unread only |
 | `o` | Open item in browser |
-| `1`..`9` | Open that numbered link from the article (wrapped URLs cannot be clicked) |
+| `1`..`9` | Open that numbered link from the article |
 | `y` | Copy item link |
 | `Z` | Toggle zoom |
 | `?` | Help |
 | `q` | Quit |
 | click | Focus and select; again on an item opens it, on a group folds it |
 | wheel | Focus the column under the pointer; move its list or scroll the article |
+
+Links in the article (the item link, `[text][n]` references, and the `[n]: url` footnotes) are real terminal hyperlinks, so Ctrl+click opens them in Herdr even when a URL wraps across rows.
 
 ## Configure
 

@@ -2,15 +2,21 @@
 //! finished refreshes. Layout and keys are in docs/PLAN.md.
 
 mod app;
+mod article;
 mod keys;
 mod ui;
 
 use std::time::Duration;
 
+use std::io::Write;
+
+use ratatui::backend::IntoCrossterm;
+use ratatui::crossterm::cursor::MoveTo;
 use ratatui::crossterm::event::{
     self, DisableMouseCapture, EnableMouseCapture, Event, KeyEventKind,
 };
-use ratatui::crossterm::execute;
+use ratatui::crossterm::style::{Print, ResetColor, SetAttribute, SetForegroundColor};
+use ratatui::crossterm::{execute, queue};
 
 use crate::config::Config;
 use crate::herdr::PluginEnv;
@@ -43,6 +49,7 @@ fn event_loop(terminal: &mut ratatui::DefaultTerminal, app: &mut App) -> Result<
         terminal
             .draw(|frame| ui::draw(frame, app))
             .map_err(|e| format!("draw: {e}"))?;
+        paint_hyperlinks(&app.hyperlinks).map_err(|e| format!("hyperlinks: {e}"))?;
         if event::poll(TICK).map_err(|e| format!("poll: {e}"))? {
             match event::read().map_err(|e| format!("read: {e}"))? {
                 Event::Key(key) if key.kind == KeyEventKind::Press => keys::handle(app, key)?,
@@ -53,4 +60,35 @@ fn event_loop(terminal: &mut ratatui::DefaultTerminal, app: &mut App) -> Result<
         app.poll_refresh()?;
     }
     Ok(())
+}
+
+/// Rewrites the URL-bearing cells wrapped in OSC 8, so the terminal knows
+/// the full URL under every cell, including a URL wrapped across rows.
+/// ratatui has no hyperlink attribute; the text is the same as what it just
+/// drew, so its buffer stays right.
+fn paint_hyperlinks(links: &[app::Hyperlink]) -> std::io::Result<()> {
+    if links.is_empty() {
+        return Ok(());
+    }
+    let mut out = std::io::stdout();
+    for l in links {
+        queue!(out, MoveTo(l.x, l.y))?;
+        let style = l.style.style();
+        if let Some(fg) = style.fg {
+            queue!(out, SetForegroundColor(fg.into_crossterm()))?;
+        }
+        if style.add_modifier.contains(ratatui::style::Modifier::BOLD) {
+            queue!(
+                out,
+                SetAttribute(ratatui::crossterm::style::Attribute::Bold)
+            )?;
+        }
+        queue!(
+            out,
+            Print(format!("\x1b]8;;{}\x1b\\{}\x1b]8;;\x1b\\", l.url, l.text)),
+            SetAttribute(ratatui::crossterm::style::Attribute::Reset),
+            ResetColor
+        )?;
+    }
+    out.flush()
 }

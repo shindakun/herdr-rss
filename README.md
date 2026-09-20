@@ -2,7 +2,7 @@
 
 A [Herdr](https://herdr.dev) plugin that reads RSS, Atom, and JSON feeds in a terminal pane. Rust, one binary, no other runtime. Opens beside your work as a split or fills the terminal as a zoomed pane.
 
-Status: the fetcher, store, and CLI work. The reader pane is next. The design is in [docs/PLAN.md](docs/PLAN.md).
+Status: the reader, fetcher, store, and CLI work. Search, OPML, and full-article fetch are next. The design is in [docs/PLAN.md](docs/PLAN.md).
 
 ## Install
 
@@ -68,6 +68,28 @@ description = "open feeds full screen"
 ```
 
 `open` splits beside the focused pane; `open-full` zooms over it. Either key pressed again focuses the reader, and a third press closes it.
+
+## Keys
+
+Three columns: feeds, items, article. Under 100 columns the pane shows one at a time; `Enter` goes right, `Esc` goes left.
+
+| Key | Does |
+| --- | --- |
+| `j` `k` / arrows | Move in the focused column |
+| `h` `l` / `Tab` | Move between columns |
+| `Enter` / `Esc` | Open item (marks it read) / back |
+| `Space` | Fold a group in the feeds column; page down elsewhere |
+| `g` `G` / `PgUp` `PgDn` | Top, bottom, page |
+| `r` / `R` | Refresh selected feed / all feeds |
+| `n` / `p` | Next / previous unread item |
+| `m` / `M` | Toggle read on item / mark list read |
+| `s` | Toggle star |
+| `u` | Show unread only |
+| `o` | Open item in browser |
+| `y` | Copy item link |
+| `Z` | Toggle zoom |
+| `?` | Help |
+| `q` | Quit |
 
 ## Configure
 

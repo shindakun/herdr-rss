@@ -867,7 +867,6 @@ version = "0.1.0"
 dependencies = [
  "arboard",
  "chrono",
- "crossterm",
  "dom_smoothie",
  "feed-rs",
  "html2text",

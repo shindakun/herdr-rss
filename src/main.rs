@@ -15,6 +15,7 @@ mod launch;
 mod parse;
 mod readability;
 mod store;
+mod time;
 mod tui;
 
 use std::io::Read;

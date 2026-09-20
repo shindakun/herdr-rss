@@ -12,6 +12,7 @@ use crate::feeds::{self, Feed};
 use crate::fetch::{self, Cache, Outcome};
 use crate::herdr::PluginEnv;
 use crate::store::{FetchRecord, ItemRow, ListQuery, Store};
+use crate::time::{age, date, now};
 use crate::{html, parse};
 
 const PENDING: &str = "not built yet; see docs/PLAN.md milestones";
@@ -63,21 +64,14 @@ impl Args {
     }
 }
 
-fn now() -> i64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_secs() as i64)
-        .unwrap_or(0)
-}
-
 pub struct Ctx {
-    env: PluginEnv,
-    config: Config,
-    store: Store,
+    pub env: PluginEnv,
+    pub config: Config,
+    pub store: Store,
 }
 
 impl Ctx {
-    fn open() -> Result<Self, String> {
+    pub fn open() -> Result<Self, String> {
         let env = PluginEnv::from_env()?;
         let config = Config::load(&env)?;
         let store = Store::open(&env.state_dir.join("rss.db"))?;
@@ -255,6 +249,7 @@ pub fn list(args: &[String]) -> Result<(), String> {
         unread_only: a.flag("--unread"),
         starred_only: a.flag("--starred"),
         feed_url: a.value("--feed").map(str::to_string),
+        feed_urls: None,
         limit: match a.value("--limit") {
             Some(n) => Some(
                 n.parse()
@@ -287,16 +282,6 @@ pub fn list_line(it: &ItemRow, now: i64) -> String {
     )
 }
 
-pub fn age(secs: i64) -> String {
-    let s = secs.max(0);
-    match s {
-        _ if s < 3_600 => format!("{}m", s / 60),
-        _ if s < 86_400 => format!("{}h", s / 3_600),
-        _ if s < 30 * 86_400 => format!("{}d", s / 86_400),
-        _ => format!("{}w", s / (7 * 86_400)),
-    }
-}
-
 fn truncate(s: &str, n: usize) -> String {
     if s.chars().count() <= n {
         s.to_string()
@@ -305,12 +290,6 @@ fn truncate(s: &str, n: usize) -> String {
         t.push('…');
         t
     }
-}
-
-pub fn date(ts: i64) -> String {
-    chrono::DateTime::from_timestamp(ts, 0)
-        .map(|d| d.format("%Y-%m-%d %H:%M UTC").to_string())
-        .unwrap_or_default()
 }
 
 /// `show ID [--width N] [--json]`: one item as text.
@@ -475,15 +454,6 @@ mod tests {
         assert!(a.flag("--unread") && a.json());
         assert_eq!(a.value("--limit"), Some("5"));
         assert!(Args::parse(&["--limit".into()]).is_err());
-    }
-
-    #[test]
-    fn ages() {
-        assert_eq!(age(90), "1m");
-        assert_eq!(age(7_200), "2h");
-        assert_eq!(age(3 * 86_400), "3d");
-        assert_eq!(age(60 * 86_400), "8w");
-        assert_eq!(age(-5), "0m");
     }
 
     #[test]

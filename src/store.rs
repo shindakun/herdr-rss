@@ -87,6 +87,8 @@ pub struct ListQuery {
     pub unread_only: bool,
     pub starred_only: bool,
     pub feed_url: Option<String>,
+    /// Restrict to these feeds; the reader uses it for a group row.
+    pub feed_urls: Option<Vec<String>>,
     pub limit: Option<usize>,
 }
 
@@ -267,6 +269,13 @@ impl Store {
             sql.push_str(" AND i.feed_url = ?");
             args.push(url.clone().into());
         }
+        if let Some(urls) = &q.feed_urls {
+            let marks = std::iter::repeat_n("?", urls.len())
+                .collect::<Vec<_>>()
+                .join(",");
+            sql.push_str(&format!(" AND i.feed_url IN ({marks})"));
+            args.extend(urls.iter().map(|u| u.clone().into()));
+        }
         sql.push_str(" ORDER BY i.published DESC, i.id");
         if let Some(n) = q.limit {
             sql.push_str(" LIMIT ?");
@@ -433,6 +442,20 @@ mod tests {
             })
             .unwrap();
         assert_eq!(only_b.len(), 1);
+        let both = s
+            .list(&ListQuery {
+                feed_urls: Some(vec!["https://a/feed".into(), "https://b/feed".into()]),
+                ..Default::default()
+            })
+            .unwrap();
+        assert_eq!(both.len(), 3);
+        let none = s
+            .list(&ListQuery {
+                feed_urls: Some(vec![]),
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(none.is_empty());
         assert_eq!(s.feeds().unwrap()[0].unread, 1);
 
         assert_eq!(s.toggle_star(&id).unwrap(), Some(true));

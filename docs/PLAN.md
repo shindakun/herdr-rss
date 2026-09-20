@@ -81,6 +81,8 @@ byline, and cleaned article HTML come out; `html2text` renders that.
 | --- | --- |
 | `j` `k` / arrows | Move in the focused column |
 | `h` `l` / `Tab` | Move between columns |
+| `Space` | Fold a group in the feeds column; page down elsewhere |
+| `g` `G` / `PgUp` `PgDn` | Top, bottom, page |
 | `Enter` / `Esc` | Open item / back (narrow mode) |
 | `r` / `R` | Refresh selected feed / all feeds |
 | `n` / `p` | Next / previous unread item |
@@ -186,14 +188,12 @@ herdr-rss/
     readability.rs         # full-article extraction via dom_smoothie
     launch.rs              # launch decision from pane list JSON
     herdr.rs               # HERDR_BIN_PATH wrapper: pane zoom, pane close
+    time.rs                # now, age, date
     tui/
-      mod.rs               # event loop, refresh worker channel
-      app.rs               # state: selection, column, filter, mode
-      feeds.rs             # feeds column
-      items.rs             # items column
-      article.rs           # article column
-      help.rs
-      keys.rs
+      mod.rs               # terminal setup, event loop, refresh tick
+      app.rs               # state and actions; tested against an in-memory store
+      ui.rs                # feeds, items, article columns; status line; help
+      keys.rs              # key to action; HELP table
   tests/fixtures/          # pane_list.json; feed captures: rss2, atom, jsonfeed, broken
   .github/workflows/ci.yml # fmt, clippy, test, release build on ubuntu and macos; audit; md lint
 ```

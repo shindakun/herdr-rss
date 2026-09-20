@@ -1,7 +1,6 @@
 //! Subcommands over the store. Every one takes `--json`. Agents use these;
 //! the skill in `skills/herdr-rss` documents them.
 
-use std::path::Path;
 use std::process::{Command, Stdio};
 use std::time::Duration;
 
@@ -13,9 +12,7 @@ use crate::fetch::{self, Cache, Outcome};
 use crate::herdr::PluginEnv;
 use crate::store::{FetchRecord, ItemRow, ListQuery, Store};
 use crate::time::{age, date, now};
-use crate::{html, parse};
-
-const PENDING: &str = "not built yet; see docs/PLAN.md milestones";
+use crate::{html, opml, parse};
 
 /// Flags, `--key value` options, and positionals from an argv slice.
 struct Args {
@@ -369,73 +366,204 @@ pub fn star(args: &[String]) -> Result<(), String> {
     Ok(())
 }
 
-/// `add URL [--name N] [--group G]`: append a line to feeds.txt.
+/// `add URL [--name N] [--group G]`: fetch the URL to prove it is a feed,
+/// then append it to feeds.txt and store its items.
 pub fn add(args: &[String]) -> Result<(), String> {
     let a = Args::parse(args)?;
     let url = a.positional.first().ok_or("add: missing URL")?;
-    let feed = Feed {
-        name: a.value("--name").unwrap_or(url).to_string(),
-        url: url.clone(),
-        group: a.value("--group").unwrap_or_default().to_string(),
-    };
-    let env = PluginEnv::from_env()?;
-    add_feed(&env.config_dir.join("feeds.txt"), feed)
-}
-
-/// Adds a feed under its group, keeping the file's group order. Rejects a
-/// duplicate URL.
-pub fn add_feed(path: &Path, feed: Feed) -> Result<(), String> {
-    let mut all = feeds::load(path)?;
-    if all.iter().any(|f| f.url == feed.url) {
-        return Err(format!("{} is already in {}", feed.url, path.display()));
+    let mut ctx = Ctx::open()?;
+    let feed = add_checked(
+        &mut ctx,
+        url,
+        a.value("--name"),
+        a.value("--group").unwrap_or_default(),
+    )?;
+    if a.json() {
+        return print_json(&serde_json::json!({
+            "name": feed.name, "url": feed.url, "group": feed.group
+        }));
     }
-    let at = all
-        .iter()
-        .rposition(|f| f.group == feed.group)
-        .map_or(all.len(), |i| i + 1);
-    all.insert(at, feed);
-    std::fs::write(path, feeds::render(&all)).map_err(|e| format!("{}: {e}", path.display()))
+    println!("added {} ({})", feed.name, feed.url);
+    Ok(())
 }
 
-/// `import FILE`: OPML to feeds.txt.
-pub fn import(_args: &[String]) -> Result<(), String> {
-    Err(format!("import: {PENDING}"))
+/// Fetches and parses the feed once. A URL that is not a feed is an error
+/// and nothing is written. Without a name, the feed's title is the name.
+/// Then writes feeds.txt, syncs the store, and stores the items.
+pub fn add_checked(
+    ctx: &mut Ctx,
+    url: &str,
+    name: Option<&str>,
+    group: &str,
+) -> Result<Feed, String> {
+    let url = url.trim();
+    if !(url.starts_with("http://") || url.starts_with("https://")) {
+        return Err(format!("{url}: url must start with http:// or https://"));
+    }
+    let path = ctx.feeds_path();
+    if feeds::load(&path)?.iter().any(|f| f.url == url) {
+        return Err(format!("{url} is already in feeds.txt"));
+    }
+    let timeout = Duration::from_secs(ctx.config.fetch_timeout_secs.max(1));
+    let agent = fetch::agent(timeout);
+    let (title, items) = match fetch::fetch_one(&agent, url, &Cache::default()) {
+        Outcome::Fetched { body, .. } => {
+            parse::parse_feed(url, &body).map_err(|e| format!("{url}: not a feed: {e}"))?
+        }
+        Outcome::NotModified => return Err(format!("{url}: unexpected 304")),
+        Outcome::Failed(e) => return Err(format!("{url}: {e}")),
+    };
+    let feed = Feed {
+        name: name
+            .map(str::to_string)
+            .filter(|n| !n.trim().is_empty())
+            .or(title)
+            .unwrap_or_else(|| url.to_string()),
+        url: url.to_string(),
+        group: group.trim().to_string(),
+    };
+    feeds::add(&path, feed.clone())?;
+    ctx.store.sync_feeds(&feeds::load(&path)?)?;
+    let at = now();
+    let cutoff = (ctx.config.keep_days > 0).then(|| at - (ctx.config.keep_days as i64) * 86_400);
+    ctx.store.upsert_items(&items, at, cutoff)?;
+    ctx.store.record_fetch(
+        url,
+        at,
+        &FetchRecord::Fetched {
+            etag: None,
+            last_modified: None,
+        },
+    )?;
+    Ok(feed)
 }
 
-/// `export`: feeds.txt to OPML on stdout.
+/// `remove URL`: drop a feed and its items.
+pub fn remove(args: &[String]) -> Result<(), String> {
+    let a = Args::parse(args)?;
+    let url = a.positional.first().ok_or("remove: missing URL")?;
+    let mut ctx = Ctx::open()?;
+    let feed = remove_feed(&mut ctx, url)?;
+    if a.json() {
+        return print_json(&serde_json::json!({ "name": feed.name, "url": feed.url }));
+    }
+    println!("removed {} ({})", feed.name, feed.url);
+    Ok(())
+}
+
+pub fn remove_feed(ctx: &mut Ctx, url: &str) -> Result<Feed, String> {
+    let path = ctx.feeds_path();
+    let feed = feeds::remove(&path, url)?;
+    ctx.store.sync_feeds(&feeds::load(&path)?)?;
+    Ok(feed)
+}
+
+/// `import FILE [--replace]`: OPML into feeds.txt. Feeds already present
+/// are skipped; `--replace` starts the file over. Nothing is fetched.
+pub fn import(args: &[String]) -> Result<(), String> {
+    let a = Args::parse(args)?;
+    let file = a.positional.first().ok_or("import: missing FILE")?;
+    let xml = std::fs::read_to_string(file).map_err(|e| format!("{file}: {e}"))?;
+    let incoming = opml::parse(&xml)?;
+    let mut ctx = Ctx::open()?;
+    let path = ctx.feeds_path();
+    let mut added = 0;
+    let mut skipped = 0;
+    if a.flag("--replace") {
+        feeds::save(&path, &incoming)?;
+        added = incoming.len();
+    } else {
+        let have = feeds::load(&path)?;
+        for f in incoming {
+            if have.iter().any(|x| x.url == f.url) {
+                skipped += 1;
+                continue;
+            }
+            feeds::add(&path, f)?;
+            added += 1;
+        }
+    }
+    let all = feeds::load(&path)?;
+    ctx.store.sync_feeds(&all)?;
+    if a.json() {
+        return print_json(&serde_json::json!({
+            "added": added, "skipped": skipped, "feeds": all.len()
+        }));
+    }
+    println!(
+        "{added} added, {skipped} already present; {} feeds in {}. Run `refresh` to fetch them.",
+        all.len(),
+        path.display()
+    );
+    Ok(())
+}
+
+/// `export`: feeds.txt as OPML on stdout.
 pub fn export(_args: &[String]) -> Result<(), String> {
-    Err(format!("export: {PENDING}"))
+    let env = PluginEnv::from_env()?;
+    let all = feeds::load(&env.config_dir.join("feeds.txt"))?;
+    print!("{}", opml::render(&all));
+    Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::fetch::testserver::{ok, serve};
 
-    fn feed(name: &str, group: &str) -> Feed {
-        Feed {
-            name: name.into(),
-            url: format!("https://{name}.example/feed"),
-            group: group.into(),
-        }
+    fn ctx() -> (Ctx, std::path::PathBuf) {
+        let dir =
+            std::env::temp_dir().join(format!("herdr-rss-cli-{}-{}", std::process::id(), now()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let env = PluginEnv {
+            config_dir: dir.clone(),
+            state_dir: dir.clone(),
+            bin_path: "herdr".into(),
+        };
+        let ctx = Ctx {
+            env,
+            config: Config::default(),
+            store: Store::open_in_memory().unwrap(),
+        };
+        (ctx, dir)
     }
 
     #[test]
-    fn add_inserts_at_end_of_its_group() {
-        let dir = std::env::temp_dir().join(format!("herdr-rss-test-{}", std::process::id()));
-        std::fs::create_dir_all(&dir).unwrap();
-        let path = dir.join("feeds.txt");
-        std::fs::write(
-            &path,
-            "# Tech\nA | https://a.example/feed\n\n# Games\nB | https://b.example/feed\n",
-        )
-        .unwrap();
+    fn add_checked_fetches_names_and_stores_then_remove_drops() {
+        let (mut ctx, dir) = ctx();
+        let (url, h) = serve(ok(include_bytes!("../tests/fixtures/lobsters.rss")));
+        let feed = add_checked(&mut ctx, &url, None, "Tech").unwrap();
+        h.join().unwrap();
+        assert_eq!(feed.name, "Lobsters");
+        assert_eq!(feed.group, "Tech");
+        let file = feeds::load(&dir.join("feeds.txt")).unwrap();
+        assert_eq!(file, std::slice::from_ref(&feed));
+        assert!(ctx.store.list(&ListQuery::default()).unwrap().len() >= 10);
+        assert!(ctx.store.feeds().unwrap()[0].last_error.is_none());
 
-        add_feed(&path, feed("c", "Tech")).unwrap();
-        add_feed(&path, feed("d", "")).unwrap();
-        let got = feeds::load(&path).unwrap();
-        let names: Vec<&str> = got.iter().map(|f| f.name.as_str()).collect();
-        assert_eq!(names, ["A", "c", "B", "d"]);
-        assert!(add_feed(&path, feed("c", "Tech")).is_err());
+        // Same URL again: refused before any fetch.
+        assert!(add_checked(&mut ctx, &url, None, "")
+            .unwrap_err()
+            .contains("already"));
+
+        // Not a feed: error, file untouched.
+        let (bad, h) = serve(ok(b"<html><body>hello</body></html>"));
+        let err = add_checked(&mut ctx, &bad, None, "").unwrap_err();
+        h.join().unwrap();
+        assert!(err.contains("not a feed"), "{err}");
+        assert_eq!(feeds::load(&dir.join("feeds.txt")).unwrap().len(), 1);
+        assert!(add_checked(&mut ctx, "ftp://x", None, "").is_err());
+
+        // Explicit name wins over the title.
+        let (url2, h) = serve(ok(include_bytes!("../tests/fixtures/daringfireball.atom")));
+        let f2 = add_checked(&mut ctx, &url2, Some("DF"), "").unwrap();
+        h.join().unwrap();
+        assert_eq!(f2.name, "DF");
+
+        let removed = remove_feed(&mut ctx, &url).unwrap();
+        assert_eq!(removed.name, "Lobsters");
+        assert_eq!(ctx.store.feeds().unwrap().len(), 1);
+        assert!(remove_feed(&mut ctx, &url).is_err());
         std::fs::remove_dir_all(&dir).unwrap();
     }
 

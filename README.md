@@ -2,7 +2,7 @@
 
 A [Herdr](https://herdr.dev) plugin that reads RSS, Atom, and JSON feeds in a terminal pane. Rust, one binary, no other runtime. Opens beside your work as a split or fills the terminal as a zoomed pane.
 
-Status: the reader, fetcher, store, and CLI work. Search, OPML, and full-article fetch are next. The design is in [docs/PLAN.md](docs/PLAN.md).
+Status: reader, fetcher, store, search, feed management, OPML, and the CLI work. Full-article fetch and a first release are next. The design is in [docs/PLAN.md](docs/PLAN.md).
 
 ## Install
 
@@ -21,18 +21,20 @@ herdr plugin link /path/to/herdr-rss
 
 ## Feeds
 
-`$(herdr plugin config-dir shindakun.herdr-rss)/feeds.txt`. One feed per line, `Name | URL`. A `# Heading` line starts a group.
+`$(herdr plugin config-dir shindakun.herdr-rss)/feeds.txt`. One feed per line, `Name | URL`. A `# Heading` line starts a group. `//` starts a comment. A `#` line with a `|` in it is a commented-out feed.
 
 ```text
 # Tech
 Ars Technica | https://feeds.arstechnica.com/arstechnica/index
 Hacker News | https://hnrss.org/frontpage
+// Cloudflare blocks this one:
+#   Ausretrogamer | https://ausretrogamer.com/feed/
 
 # Games
 Rock Paper Shotgun | https://www.rockpapershotgun.com/feed
 ```
 
-`herdr-rss add URL --name N --group G` appends a line. `import FILE.opml` and `export` convert to and from OPML.
+Edit the file by hand, or press `a` in the pane, or use the CLI. `add` fetches the URL first and refuses one that is not a feed; without a name it uses the feed's title. `import FILE.opml` merges an OPML file, skipping feeds already present; `export` prints one. Adds and removes edit the file in place, so your comments stay.
 
 ## CLI
 
@@ -45,7 +47,10 @@ The plugin binary is also a CLI over the same store, for scripts and agents. Fin
 | `show ID [--width N]` | One item as text |
 | `mark ID... [--unread]` | Set read state |
 | `star ID...` | Toggle the star |
-| `add URL [--name N] [--group G]` | Append to feeds.txt |
+| `add URL [--name N] [--group G]` | Fetch the URL, then add it to feeds.txt |
+| `remove URL` | Drop a feed and its items |
+| `import FILE.opml [--replace]` | Merge an OPML file into feeds.txt; `--replace` starts over |
+| `export` | feeds.txt as OPML on stdout |
 
 A refresh sends `If-None-Match` and `If-Modified-Since`, so a feed that has not changed costs one small request. Eight fetches run at a time. Items older than `keep_days` are not stored, and stored items age out unless starred.
 
@@ -85,6 +90,9 @@ Three columns: feeds, items, article. Under 100 columns the pane shows one at a 
 | `m` / `M` | Toggle read on item / mark list read |
 | `s` | Toggle star |
 | `u` | Show unread only |
+| `/` | Search titles in this list; `Enter` on an empty line clears |
+| `a` | Add a feed by URL under the selected group |
+| `d` | Delete the selected feed, after `y` |
 | `o` | Open item in browser |
 | `1`..`9` | Open that numbered link from the article |
 | `y` | Copy item link |

@@ -59,13 +59,23 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
     } else {
         "r refresh  o open  s star  m read  Z zoom  ? help"
     };
-    let left = app.status_line();
-    let pad = (status.width as usize).saturating_sub(left.chars().count() + hint.len() + 1);
-    let line = Line::from(vec![
-        Span::raw(left),
-        Span::raw(" ".repeat(pad.max(1))),
-        Span::styled(hint, Style::default().fg(Color::DarkGray)),
-    ]);
+    let line = match app.prompt_line() {
+        Some(p) => {
+            // Put the terminal cursor at the end of the input.
+            let x = status.x + (p.chars().count() as u16).min(status.width.saturating_sub(1));
+            frame.set_cursor_position((x, status.y));
+            Line::from(Span::styled(p, Style::default().fg(Color::Yellow)))
+        }
+        None => {
+            let left = app.status_line();
+            let pad = (status.width as usize).saturating_sub(left.chars().count() + hint.len() + 1);
+            Line::from(vec![
+                Span::raw(left),
+                Span::raw(" ".repeat(pad.max(1))),
+                Span::styled(hint, Style::default().fg(Color::DarkGray)),
+            ])
+        }
+    };
     frame.render_widget(Paragraph::new(line), status);
 
     if app.show_help {

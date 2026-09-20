@@ -18,6 +18,9 @@ pub const HELP: &[(&str, &str)] = &[
     ("m / M", "toggle read on item / mark list read"),
     ("s", "toggle star"),
     ("u", "show unread only"),
+    ("/", "search titles in this list; empty clears"),
+    ("a", "add a feed by URL under the selected group"),
+    ("d", "delete the selected feed"),
     ("o", "open item in browser"),
     ("1 … 9", "open that numbered link from the article"),
     ("y", "copy item link"),
@@ -54,6 +57,25 @@ pub fn handle(app: &mut App, key: KeyEvent) -> Result<(), String> {
         app.show_help = false;
         return Ok(());
     }
+    if app.prompt.is_some() {
+        return match key.code {
+            KeyCode::Esc => {
+                app.prompt_cancel();
+                Ok(())
+            }
+            KeyCode::Enter => app.prompt_enter(),
+            KeyCode::Backspace => {
+                app.prompt_backspace();
+                Ok(())
+            }
+            KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                app.prompt_cancel();
+                Ok(())
+            }
+            KeyCode::Char(c) => app.prompt_char(c),
+            _ => Ok(()),
+        };
+    }
     app.status = None;
     if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {
         app.quit = true;
@@ -86,6 +108,9 @@ pub fn handle(app: &mut App, key: KeyEvent) -> Result<(), String> {
         KeyCode::Char('M') => app.mark_all_read()?,
         KeyCode::Char('s') => app.toggle_star()?,
         KeyCode::Char('u') => app.toggle_unread_filter()?,
+        KeyCode::Char('/') => app.start_search(),
+        KeyCode::Char('a') => app.start_add(),
+        KeyCode::Char('d') => app.start_delete(),
         KeyCode::Char('o') => app.open_in_browser(),
         KeyCode::Char(c @ '1'..='9') => app.open_link(c as usize - '0' as usize),
         KeyCode::Char('y') => app.copy_link(),

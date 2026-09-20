@@ -17,14 +17,25 @@ pub struct Item {
     pub summary_html: Option<String>,
 }
 
-/// Parses RSS, Atom, or JSON Feed bytes.
+/// Parses RSS, Atom, or JSON Feed bytes into items.
 pub fn parse(feed_url: &str, bytes: &[u8]) -> Result<Vec<Item>, String> {
+    parse_feed(feed_url, bytes).map(|(_, items)| items)
+}
+
+/// Parses a feed into its title and items. The title is what `add` uses
+/// when no name is given.
+pub fn parse_feed(feed_url: &str, bytes: &[u8]) -> Result<(Option<String>, Vec<Item>), String> {
     let feed = feed_rs::parser::parse(bytes).map_err(|e| e.to_string())?;
-    Ok(feed
+    let title = feed
+        .title
+        .map(|t| t.content.trim().to_string())
+        .filter(|t| !t.is_empty());
+    let items = feed
         .entries
         .iter()
         .map(|e| item_from(feed_url, e))
-        .collect())
+        .collect();
+    Ok((title, items))
 }
 
 fn item_from(feed_url: &str, e: &Entry) -> Item {
@@ -102,11 +113,12 @@ mod tests {
 
     #[test]
     fn rss2() {
-        let p = parse(
+        let (title, p) = parse_feed(
             "https://lobste.rs/rss",
             include_bytes!("../tests/fixtures/lobsters.rss"),
         )
         .unwrap();
+        assert_eq!(title.as_deref(), Some("Lobsters"));
         assert!(p.len() >= 10, "{}", p.len());
         let i = &p[0];
         assert_eq!(i.id.len(), 16);

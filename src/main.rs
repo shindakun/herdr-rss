@@ -12,6 +12,7 @@ mod fetch;
 mod herdr;
 mod html;
 mod launch;
+mod opml;
 mod parse;
 mod readability;
 mod store;
@@ -24,8 +25,9 @@ use std::process::ExitCode;
 use config::Config;
 use herdr::PluginEnv;
 
-const USAGE: &str = "usage: herdr-rss [refresh [--feed URL] [--detach] | list [--unread] [--feed URL] [--limit N] \
-| show ID | mark ID... [--unread] | star ID... | add URL [--name N] [--group G] | import FILE | export] [--json]";
+const USAGE: &str = "usage: herdr-rss [refresh [--feed URL] [--detach] | list [--unread] [--starred] [--feed URL] [--limit N] \
+| show ID [--width N] | mark ID... [--unread] | star ID... | add URL [--name N] [--group G] | remove URL \
+| import FILE [--replace] | export] [--json]";
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -39,6 +41,7 @@ fn main() -> ExitCode {
         Some("mark") => cli::mark(&args[1..]),
         Some("star") => cli::star(&args[1..]),
         Some("add") => cli::add(&args[1..]),
+        Some("remove") => cli::remove(&args[1..]),
         Some("import") => cli::import(&args[1..]),
         Some("export") => cli::export(&args[1..]),
         Some("--help" | "-h" | "help") => {

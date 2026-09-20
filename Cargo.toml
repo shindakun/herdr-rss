@@ -22,6 +22,7 @@ serde_json = "1"
 toml = "1"
 ureq = { version = "3", features = ["json"] }
 url = "2"
+quick-xml = "0.41"
 
 [profile.release]
 lto = true

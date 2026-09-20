@@ -870,6 +870,7 @@ dependencies = [
  "dom_smoothie",
  "feed-rs",
  "html2text",
+ "quick-xml",
  "ratatui",
  "rusqlite",
  "serde",

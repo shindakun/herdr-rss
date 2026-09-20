@@ -25,6 +25,17 @@ pub enum Column {
     Article,
 }
 
+/// What the status line is asking for, when it is asking.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Prompt {
+    /// `/`: filter item titles.
+    Search,
+    /// `a`: a feed URL to add under this group.
+    AddFeed { group: String },
+    /// `d`: confirm removing this feed.
+    DeleteFeed { url: String, name: String },
+}
+
 /// A row in the feeds column.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Row {
@@ -46,6 +57,10 @@ pub struct App {
     pub item_sel: usize,
     pub column: Column,
     pub unread_only: bool,
+    /// Title filter from `/`, applied to the current list.
+    pub search: Option<String>,
+    pub prompt: Option<Prompt>,
+    pub input: String,
     pub article_scroll: u16,
     /// Rendered body for (item id, width).
     article_cache: Option<(String, u16, String)>,
@@ -66,6 +81,7 @@ pub struct App {
     /// URL-bearing cells of the last frame, painted as OSC 8 after the draw.
     pub hyperlinks: Vec<Hyperlink>,
     refresh_rx: Option<Receiver<Result<RefreshReport, String>>>,
+    add_rx: Option<Receiver<Result<crate::feeds::Feed, String>>>,
 }
 
 /// Text at a screen position that the terminal should treat as a link.
@@ -114,6 +130,9 @@ impl App {
             item_sel: 0,
             column: Column::Items,
             unread_only: false,
+            search: None,
+            prompt: None,
+            input: String::new(),
             article_scroll: 0,
             article_cache: None,
             status: None,
@@ -128,6 +147,7 @@ impl App {
             items_state: ListState::default(),
             hyperlinks: Vec::new(),
             refresh_rx: None,
+            add_rx: None,
         };
         app.reload_feeds()?;
         app.reload_items()?;
@@ -203,7 +223,12 @@ impl App {
             Some(Row::Feed(i)) => q.feed_url = Some(self.feeds[*i].url.clone()),
             Some(Row::All) | None => {}
         }
-        self.items = self.store.list(&q)?;
+        let mut items = self.store.list(&q)?;
+        if let Some(needle) = &self.search {
+            let needle = needle.to_lowercase();
+            items.retain(|i| i.title.to_lowercase().contains(&needle));
+        }
+        self.items = items;
         self.item_sel = keep
             .and_then(|id| self.items.iter().position(|i| i.id == id))
             .unwrap_or(0);
@@ -629,6 +654,166 @@ impl App {
         }
     }
 
+    // ----- prompts -----------------------------------------------------
+
+    pub fn start_search(&mut self) {
+        self.input = self.search.clone().unwrap_or_default();
+        self.prompt = Some(Prompt::Search);
+    }
+
+    /// `a`: the new feed goes under the selected group, or the selected
+    /// feed's group.
+    pub fn start_add(&mut self) {
+        let group = match self.rows.get(self.feed_sel) {
+            Some(Row::Group(g)) => g.clone(),
+            Some(Row::Feed(i)) => self.feeds[*i].group.clone(),
+            _ => String::new(),
+        };
+        self.input.clear();
+        self.prompt = Some(Prompt::AddFeed { group });
+    }
+
+    /// `d`: only on a feed row.
+    pub fn start_delete(&mut self) {
+        match self.rows.get(self.feed_sel) {
+            Some(Row::Feed(i)) => {
+                let f = &self.feeds[*i];
+                self.prompt = Some(Prompt::DeleteFeed {
+                    url: f.url.clone(),
+                    name: f.name.clone(),
+                });
+            }
+            _ => self.status = Some("select a feed to delete it".into()),
+        }
+    }
+
+    pub fn prompt_char(&mut self, c: char) -> Result<(), String> {
+        match &self.prompt {
+            Some(Prompt::DeleteFeed { url, .. }) => {
+                let url = url.clone();
+                self.prompt = None;
+                if c == 'y' || c == 'Y' {
+                    self.delete_feed(&url)?;
+                }
+                Ok(())
+            }
+            Some(_) => {
+                self.input.push(c);
+                Ok(())
+            }
+            None => Ok(()),
+        }
+    }
+
+    pub fn prompt_backspace(&mut self) {
+        self.input.pop();
+    }
+
+    pub fn prompt_cancel(&mut self) {
+        self.prompt = None;
+        self.input.clear();
+    }
+
+    pub fn prompt_enter(&mut self) -> Result<(), String> {
+        let Some(p) = self.prompt.take() else {
+            return Ok(());
+        };
+        let input = std::mem::take(&mut self.input);
+        match p {
+            Prompt::Search => {
+                let q = input.trim().to_string();
+                self.search = (!q.is_empty()).then_some(q);
+                self.reload_items()?;
+                if self.search.is_some() && self.items.is_empty() {
+                    self.status = Some("no matches".into());
+                }
+                Ok(())
+            }
+            Prompt::AddFeed { group } => {
+                let url = input.trim().to_string();
+                if url.is_empty() {
+                    return Ok(());
+                }
+                self.add_feed(url, group);
+                Ok(())
+            }
+            Prompt::DeleteFeed { .. } => Ok(()),
+        }
+    }
+
+    /// The prompt as the status line shows it.
+    pub fn prompt_line(&self) -> Option<String> {
+        Some(match self.prompt.as_ref()? {
+            Prompt::Search => format!("/{}", self.input),
+            Prompt::AddFeed { group } if group.is_empty() => {
+                format!("add feed url: {}", self.input)
+            }
+            Prompt::AddFeed { group } => format!("add feed url to {group}: {}", self.input),
+            Prompt::DeleteFeed { name, .. } => format!("delete {name}? y/n"),
+        })
+    }
+
+    /// Fetches the URL on a worker thread; a URL that is not a feed is
+    /// refused there and nothing is written.
+    fn add_feed(&mut self, url: String, group: String) {
+        if self.env.is_none() {
+            self.status = Some("not running under herdr".into());
+            return;
+        }
+        if self.add_rx.is_some() {
+            self.status = Some("already adding a feed".into());
+            return;
+        }
+        let (tx, rx) = mpsc::channel();
+        std::thread::spawn(move || {
+            let result =
+                Ctx::open().and_then(|mut ctx| cli::add_checked(&mut ctx, &url, None, &group));
+            let _ = tx.send(result);
+        });
+        self.add_rx = Some(rx);
+        self.status = Some("fetching feed…".into());
+    }
+
+    fn poll_add(&mut self) -> Result<(), String> {
+        let Some(rx) = &self.add_rx else {
+            return Ok(());
+        };
+        let Ok(result) = rx.try_recv() else {
+            return Ok(());
+        };
+        self.add_rx = None;
+        match result {
+            Ok(feed) => {
+                self.status = Some(format!("added {}", feed.name));
+                self.reload_feeds()?;
+                if let Some(i) = self.feeds.iter().position(|f| f.url == feed.url) {
+                    if let Some(r) = self.rows.iter().position(|r| *r == Row::Feed(i)) {
+                        self.feed_sel = r;
+                        self.column = Column::Feeds;
+                    }
+                }
+                self.reload_items()
+            }
+            Err(e) => {
+                self.status = Some(e);
+                Ok(())
+            }
+        }
+    }
+
+    fn delete_feed(&mut self, url: &str) -> Result<(), String> {
+        let Some(env) = self.env.clone() else {
+            self.status = Some("not running under herdr".into());
+            return Ok(());
+        };
+        let path = env.config_dir.join("feeds.txt");
+        let feed = crate::feeds::remove(&path, url)?;
+        self.store.sync_feeds(&crate::feeds::load(&path)?)?;
+        self.status = Some(format!("removed {}", feed.name));
+        self.reload_feeds()?;
+        self.reload_items()
+    }
+
     // ----- mouse -------------------------------------------------------
 
     /// Left click: focus the column under the pointer and select the row.
@@ -750,8 +935,9 @@ impl App {
         self.refreshing = true;
     }
 
-    /// Picks up a finished refresh, if any, and reloads.
+    /// Picks up a finished refresh or add, if any, and reloads.
     pub fn poll_refresh(&mut self) -> Result<(), String> {
+        self.poll_add()?;
         let Some(rx) = &self.refresh_rx else {
             return Ok(());
         };
@@ -810,6 +996,9 @@ impl App {
         }
         if self.unread_only {
             parts.push("unread only".into());
+        }
+        if let Some(q) = &self.search {
+            parts.push(format!("search: {q}"));
         }
         parts.join(" · ")
     }
@@ -1097,6 +1286,63 @@ mod tests {
         assert_eq!(a.status_line(), "! a: HTTP 503");
         a.feed_sel = 4;
         assert_eq!(a.status_line(), "4 unread · refreshed 0m ago");
+    }
+
+    #[test]
+    fn search_filters_titles_and_clears() {
+        let mut a = app();
+        a.start_search();
+        for c in "A-".chars() {
+            a.prompt_char(c).unwrap();
+        }
+        assert_eq!(a.prompt_line().as_deref(), Some("/A-"));
+        a.prompt_enter().unwrap();
+        assert_eq!(titles(&a), ["a-1", "a-2"], "case-insensitive");
+        assert!(a.status_line().ends_with("search: A-"));
+        a.column = Column::Feeds;
+        a.bottom().unwrap();
+        assert!(a.items.is_empty(), "filter follows the feed");
+        a.start_search();
+        assert_eq!(a.input, "A-", "prefilled");
+        a.prompt_backspace();
+        a.prompt_backspace();
+        a.prompt_enter().unwrap();
+        assert_eq!(a.search, None);
+        assert_eq!(titles(&a), ["c-1"]);
+        a.start_search();
+        a.prompt_char('z').unwrap();
+        a.prompt_cancel();
+        assert_eq!(a.prompt, None);
+        assert_eq!(a.search, None);
+    }
+
+    #[test]
+    fn add_prompt_uses_the_selected_group_and_delete_needs_a_feed_row() {
+        let mut a = app();
+        a.column = Column::Feeds;
+        a.feed_sel = 3;
+        a.start_add();
+        assert_eq!(
+            a.prompt,
+            Some(Prompt::AddFeed {
+                group: "Tech".into()
+            })
+        );
+        assert_eq!(a.prompt_line().as_deref(), Some("add feed url to Tech: "));
+        a.prompt_enter().unwrap();
+        assert_eq!(a.prompt, None, "empty input adds nothing");
+        assert!(a.add_rx.is_none());
+
+        a.feed_sel = 0;
+        a.start_delete();
+        assert_eq!(a.prompt, None);
+        assert_eq!(a.status.as_deref(), Some("select a feed to delete it"));
+        a.feed_sel = 3;
+        a.start_delete();
+        assert_eq!(a.prompt_line().as_deref(), Some("delete a? y/n"));
+        a.prompt_char('n').unwrap();
+        assert_eq!(a.prompt, None);
+        assert_eq!(a.feeds.len(), 3);
     }
 
     #[test]

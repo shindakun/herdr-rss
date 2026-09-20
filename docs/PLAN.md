@@ -63,7 +63,11 @@ unread total and folds with `Space`. The virtual feeds `All` and `Starred`
 sit at the top.
 
 Item rows: unread dot, feed short name, title, age. Sort is newest first.
-`u` filters to unread. `/` searches titles in the current list.
+`u` filters to unread. `/` searches titles in the current list; the filter
+stays while you move between feeds until `/` `Enter` on an empty line
+clears it. `a` asks for a URL and adds it under the selected group, on the
+worker thread, so a slow host does not freeze the pane. `d` asks `y/n`
+before removing the selected feed and its items.
 
 Article: title, feed, author, date, then the item body as text. HTML from
 the feed body goes through `html2text` at the column width. Links in the body
@@ -110,21 +114,28 @@ byline, and cleaned article HTML come out; `html2text` renders that.
 ## Feeds file
 
 `<config dir>/feeds.txt`. One feed per line, `Name | URL`. A `# Heading`
-line starts a group. Same format as the Picked source list in `feedthing`,
-so that file drops in unchanged.
+line starts a group. `//` starts a comment. A `#` line with a `|` in it is a
+commented-out feed, not a heading.
 
 ```text
 # Tech
 Ars Technica | https://feeds.arstechnica.com/arstechnica/index
 Hacker News | https://hnrss.org/frontpage
+// Cloudflare blocks this one:
+#   Ausretrogamer | https://ausretrogamer.com/feed/
 
 # Games
 Rock Paper Shotgun | https://www.rockpapershotgun.com/feed
 ```
 
-`herdr-rss import feeds.opml` converts OPML to this file. `herdr-rss export`
-writes OPML. `a` in the pane appends a line. The file is the source of truth;
-SQLite mirrors it on every start and on `a` / `d`.
+`add` fetches the URL first. A URL that is not a feed is refused and nothing
+is written. Without `--name` the feed's title is the name. The new line goes
+after the last feed of its group, or under a new heading at the end.
+`remove` deletes the one line. Both edit the file in place, so comments and
+layout survive. `import` merges an OPML file the same way, skipping URLs
+already present, and fetches nothing; `--replace` writes the file fresh.
+`export` prints OPML with one level of groups. The file is the source of
+truth; the store syncs to it on every refresh, add, remove, and import.
 
 ## Fetch and store
 
@@ -168,8 +179,9 @@ Every subcommand takes `--json`. Agents use these.
 | `herdr-rss show <id> [--width N]` | Print one item's text |
 | `herdr-rss mark <id>... [--unread]` | Set read state |
 | `herdr-rss star <id>...` | Toggle star |
-| `herdr-rss add <url> [--name N] [--group G]` | Append to feeds.txt |
-| `herdr-rss import <file.opml>` / `export` | OPML in and out |
+| `herdr-rss add <url> [--name N] [--group G]` | Fetch, then add to feeds.txt |
+| `herdr-rss remove <url>` | Drop a feed and its items |
+| `herdr-rss import <file.opml> [--replace]` / `export` | OPML in and out |
 | `herdr-rss --launch-decision` | Reads `pane list` on stdin, prints `OPEN`, `FOCUS <id>`, or `CLOSE <id>` |
 
 A `skills/herdr-rss/SKILL.md` teaches an agent the list and show commands.
@@ -189,9 +201,10 @@ herdr-rss/
   skills/herdr-rss/SKILL.md
   src/
     main.rs                # subcommand dispatch; no args = TUI
-    cli.rs                 # list, show, mark, star, add, import, export
+    cli.rs                 # list, show, mark, star, add, remove, import, export
+    opml.rs                # OPML parse and render
     config.rs              # config.toml
-    feeds.rs               # feeds.txt parse and write, OPML
+    feeds.rs               # feeds.txt parse, in-place add and remove
     fetch.rs               # ureq, conditional GET, thread pool
     parse.rs               # feed-rs to Item
     store.rs               # rusqlite schema, queries, prune
@@ -285,8 +298,9 @@ description = "open feeds full screen"
 4. Done. Auto refresh every `refresh_minutes` while the pane is open. A
    failed feed's error shows in the status line while it is selected.
    Wheel or click into the article marks the item read.
-5. `/` search, `a` add and `d` delete feed from the pane, OPML import and
-   export.
+5. Done. `/` search, `a` add and `d` delete from the pane, `remove` and
+   `import` / `export` on the CLI, `//` comments in feeds.txt, in-place
+   file edits so comments survive.
 6. `f` full-article fetch through `dom_smoothie`. First release.
 7. Launcher focus and close paths tried from a bound key.
 

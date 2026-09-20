@@ -113,14 +113,14 @@ pub fn fetch_all(jobs: Vec<(String, Cache)>, timeout: Duration) -> Vec<(String, 
         .collect()
 }
 
+/// A one-shot HTTP server for tests: answers one request from the closure
+/// and hands back the request head it saw, lowercased.
 #[cfg(test)]
-mod tests {
-    use super::*;
+pub mod testserver {
     use std::io::{BufRead, BufReader, Read, Write};
     use std::net::TcpListener;
 
-    /// A one-shot HTTP server that answers from a closure and records the request.
-    fn serve(
+    pub fn serve(
         respond: impl Fn(&str) -> String + Send + 'static,
     ) -> (String, std::thread::JoinHandle<Vec<String>>) {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
@@ -147,6 +147,24 @@ mod tests {
         });
         (format!("http://{addr}/feed"), handle)
     }
+
+    /// A 200 response carrying `body`.
+    pub fn ok(body: &'static [u8]) -> impl Fn(&str) -> String + Send + 'static {
+        move |_| {
+            format!(
+                "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                String::from_utf8_lossy(body)
+            )
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::testserver::serve;
+    use super::*;
+    use std::net::TcpListener;
 
     #[test]
     fn fetched_keeps_validators() {

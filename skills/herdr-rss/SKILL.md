@@ -22,6 +22,8 @@ Every subcommand takes `--json`. Items have a 16-character `id`.
 | `herdr-rss show ID --json` | One item with its `summary_html`; without `--json`, as text |
 | `herdr-rss mark ID...` | Mark read |
 | `herdr-rss star ID...` | Toggle a star |
-| `herdr-rss add URL --name N --group G` | Add a feed |
+| `herdr-rss add URL --name N --group G` | Fetch the URL and add it; fails if it is not a feed |
+| `herdr-rss remove URL` | Drop a feed |
+| `herdr-rss export` | All feeds as OPML |
 
 Do not mark items read unless the user asked you to.

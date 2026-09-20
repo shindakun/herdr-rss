@@ -552,9 +552,7 @@ impl App {
         self.open_url(&link);
     }
 
-    /// Opens the article's numbered link `n` (1-based, as printed in the
-    /// body). Wrapped URLs cannot be clicked in the terminal, so this is the
-    /// way to follow one.
+    /// Opens the article's numbered link `n`, as printed in the body.
     pub fn open_link(&mut self, n: usize) {
         let links = self.article_links();
         match n.checked_sub(1).and_then(|i| links.get(i)) {
@@ -566,10 +564,9 @@ impl App {
         }
     }
 
-    /// The `[n]: url` footnotes html2text appends to the body, in order,
-    /// made absolute against the item's link. Rendered very wide so no
-    /// footnote wraps; numbering does not depend on width, so it matches
-    /// what the pane shows.
+    /// The `[n]: url` footnotes in number order, made absolute against the
+    /// item's link. Rendered wide so no footnote wraps; numbering does not
+    /// depend on width.
     pub fn article_links(&self) -> Vec<String> {
         let Some(it) = self.selected_item() else {
             return Vec::new();

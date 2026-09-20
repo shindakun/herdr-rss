@@ -2,13 +2,11 @@
 
 ## Unreleased
 
-- `/` searches titles in the current list. `a` adds a feed by URL under the selected group; `d` deletes the selected feed after `y`.
-- CLI: `add` fetches the URL first and refuses one that is not a feed, naming it from the feed title; `remove`; `import FILE.opml [--replace]`; `export`.
-- feeds.txt: `//` comments; a `#` line containing `|` is a commented-out feed. Adds and removes edit the file in place.
-- Auto refresh every `refresh_minutes` while the pane is open. A failed feed's error shows in the status line while selected. Wheel or click into the article marks the item read.
-- Mouse: click focuses and selects, a second click opens an item or folds a group, the wheel focuses the column under the pointer and moves its list or scrolls the article.
-- Article links are OSC 8 terminal hyperlinks: the item link, `[text][n]` references, and footnotes, including a footnote wrapped across rows. Relative footnote URLs resolve against the item link. `1`..`9` open link `n` from the keyboard.
-- Reader pane: feeds, items, and article columns, one at a time under 100 columns. Groups fold. Open marks read; `m`, `M`, `s`, `u`, `n`, `p`, `o`, `y`, `Z`, `r`, `R`, `?`. Refresh runs on a worker thread.
-- Fetch, parse, and store: conditional GETs, eight in flight, `feed-rs` for RSS, Atom, and JSON Feed, SQLite in the state dir. Dateless items keep the time they were first seen. Items older than `keep_days` are skipped on insert and pruned on refresh.
-- CLI: `refresh` (with `--detach` for the startup hook), `list`, `show`, `mark`, `star`, all with `--json`.
-- Scaffold: manifest, launchers for split and zoomed placement, `feeds.txt` parser, `config.toml`, `add` subcommand, house tooling and CI.
+- Reader pane: feeds, items, and article columns; one at a time under 100 columns. Groups fold. Read state, stars, unread filter, title search, next and previous unread. Add and delete feeds from the pane.
+- Article links are terminal hyperlinks, wrapped or not. `1`..`9` open numbered links. `o` opens the item, `y` copies its link.
+- Mouse: click to focus and select, click again to open or fold, wheel to move or scroll.
+- Refresh on a worker thread, on `r` / `R`, and every `refresh_minutes`. A failed feed is marked and its error shown while selected.
+- Fetch with conditional GETs, eight at a time; RSS, Atom, and JSON Feed through `feed-rs`; SQLite in the state dir. Items past `keep_days` are dropped.
+- feeds.txt with groups, `//` comments, and commented-out feeds. Adds and removes edit one line.
+- CLI: `refresh`, `list`, `show`, `mark`, `star`, `add`, `remove`, `import`, `export`, all with `--json`.
+- Split and zoomed launchers that open, focus, or close on repeat. Startup hook warms the cache.

@@ -1,5 +1,5 @@
-//! Item body HTML to terminal text with `html2text`. Link numbering and the
-//! trailing link list land with the reader pane.
+//! Item body HTML to terminal text with `html2text`, which numbers links
+//! `[text][n]` and lists them at the end.
 
 pub fn to_text(html: &str, width: usize) -> String {
     html2text::from_read(html.as_bytes(), width.max(20))

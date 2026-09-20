@@ -1,5 +1,4 @@
-//! Subcommands over the store. Every one takes `--json`. Agents use these;
-//! the skill in `skills/herdr-rss` documents them.
+//! Subcommands over the store. Every one takes `--json`.
 
 use std::process::{Command, Stdio};
 use std::time::Duration;
@@ -366,8 +365,7 @@ pub fn star(args: &[String]) -> Result<(), String> {
     Ok(())
 }
 
-/// `add URL [--name N] [--group G]`: fetch the URL to prove it is a feed,
-/// then append it to feeds.txt and store its items.
+/// `add URL [--name N] [--group G]`.
 pub fn add(args: &[String]) -> Result<(), String> {
     let a = Args::parse(args)?;
     let url = a.positional.first().ok_or("add: missing URL")?;

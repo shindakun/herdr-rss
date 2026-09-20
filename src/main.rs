@@ -1,9 +1,8 @@
 //! herdr-rss: a Herdr plugin that reads RSS, Atom, and JSON feeds in a pane.
 //!
-//! With no arguments the binary is the TUI, launched by Herdr as a plugin pane.
-//! With a subcommand it is a CLI over the same store, for agents and scripts.
-//! Two probes back the launcher script: `--launch-decision` and
-//! `--open-direction`.
+//! No arguments: the reader, run by Herdr as a plugin pane. A subcommand:
+//! the CLI over the same store. `--launch-decision` and `--open-direction`
+//! serve the launcher script.
 
 mod cli;
 mod config;

@@ -5,7 +5,6 @@ use std::path::PathBuf;
 use std::process::Command;
 
 #[derive(Debug, Clone)]
-#[allow(dead_code)] // state_dir and run() land with the store and the TUI
 pub struct PluginEnv {
     pub config_dir: PathBuf,
     pub state_dir: PathBuf,
@@ -39,9 +38,7 @@ impl PluginEnv {
             .ok_or_else(|| "HERDR_PLUGIN_ROOT is not set; run under herdr".to_string())
     }
 
-    /// Runs `herdr <args>` and returns stdout. Used for `pane zoom --current`
-    /// and friends from inside the TUI.
-    #[allow(dead_code)] // the TUI's `Z` (pane zoom --current) uses this
+    /// Runs `herdr <args>` and returns stdout.
     pub fn run(&self, args: &[&str]) -> Result<String, String> {
         let out = Command::new(&self.bin_path)
             .args(args)

@@ -1,46 +1,25 @@
 # herdr-rss
 
 A Herdr plugin that reads RSS, Atom, and JSON feeds in a terminal pane. Rust,
-one binary, no other runtime. Opens beside your work as a split, or fills the
-terminal as a zoomed pane. Feeds, items, and article text, all keyboard driven.
-
-## What it does
-
-1. You press a key. The launcher opens the reader in a split next to the
-   focused pane, or zoomed over it. Press the key again and it focuses. Press
-   it a third time and it closes.
-2. The reader shows three columns: feeds, items in the selected feed, the
-   selected item's text. A narrow split shows one column at a time.
-3. `r` refreshes. Fetches run in parallel with conditional GETs. Read state,
-   stars, and the item cache live in SQLite under the plugin state dir.
-4. `o` opens the item in the browser. `y` copies the link. `Z` toggles zoom
-   through `herdr pane zoom`.
-5. The same binary is a CLI. An agent can list unread items as JSON, mark
-   them read, or add a feed, without the pane open.
+one binary, no other runtime. The README covers install, keys, the feeds
+file, config, and the CLI. This file covers how it works and what is left.
 
 ## Opening
 
-Two actions, one launcher script each. Both are idempotent and scoped to the
+Two actions, one launcher script each. Both are idempotent within the
 current tab: open, else focus, else close.
 
-| Action | Placement | Bind |
-| --- | --- | --- |
-| `open` | `split`, direction from config (`right` default, `down`) | `prefix+n` |
-| `open-full` | `zoomed` | `prefix+shift+n` |
+| Action | Placement |
+| --- | --- |
+| `open` | `split`, direction from `open_direction` |
+| `open-full` | `zoomed` |
 
 The launcher finds its own pane in `herdr pane list` by `label == "Feeds"`
-and `cwd == HERDR_PLUGIN_ROOT`, filtered to the focused pane's `tab_id`.
-Focus is `pane zoom <id> --on` then `--off`, since Herdr has no focus-by-id.
-Close is `pane close <id>`. Any parse failure falls through to open.
-
-```toml
-# <config dir>/config.toml
-open_direction = "right"   # or "down"
-refresh_minutes = 30       # 0 disables auto refresh while the pane is open
-fetch_timeout_secs = 15
-keep_days = 30             # items older than this and unstarred are pruned
-browser = "open"           # command that receives the URL; default per OS
-```
+and `cwd == HERDR_PLUGIN_ROOT`, within the focused pane's `tab_id`. The
+decision comes from `herdr-rss --launch-decision`, which reads the pane list
+on stdin, so it is unit tested. Focus is `pane zoom <id> --on` then `--off`;
+Herdr has no focus-by-id. Close is `pane close <id>`. Any failure falls
+through to open.
 
 ## Layout
 
@@ -51,257 +30,126 @@ browser = "open"           # command that receives the URL; default per OS
 │   HN       8  │   Lobsters: Rust 1.96 released │                        │
 │ ▸ Games    3  │                                │ Apple's smallest ...   │
 └───────────────┴────────────────────────────────┴────────────────────────┘
- 12 unread · refreshed 4m ago · r refresh  o open  s star  Z zoom  ? help
+ 12 unread · refreshed 4m ago          r refresh  o open  s star  Z zoom  ? help
 ```
 
-Widths: feeds 22 cells, items 40%, article the rest. Under 100 columns the
-pane shows one column at a time. `Enter` goes right, `Esc` goes left. Under
-100 columns is the normal split case, so this path gets tested first.
+Feeds 24 cells, items 40%, article the rest. Under 100 columns the pane
+shows one column at a time; `Enter` goes right, `Esc` goes left. A split
+beside a terminal is under 100 most of the time.
 
-Feeds column groups by heading from the feed list. A group row shows its
-unread total and folds with `Space`. The virtual feeds `All` and `Starred`
-sit at the top.
+Feeds column: `All`, `Starred`, then the groups from feeds.txt. A group row
+shows its unread total and folds with `Space`. A feed that failed its last
+fetch is marked `!` and, while selected, puts its error in the status line.
 
-Item rows: unread dot, feed short name, title, age. Sort is newest first.
-`u` filters to unread. `/` searches titles in the current list; the filter
-stays while you move between feeds until `/` `Enter` on an empty line
-clears it. `a` asks for a URL and adds it under the selected group, on the
-worker thread, so a slow host does not freeze the pane. `d` asks `y/n`
-before removing the selected feed and its items.
+Items: unread dot, star, feed name when the list spans feeds, title, age.
+Newest first. `u` keeps unread only. `/` filters titles; the filter follows
+you between feeds until cleared. `a` prompts for a URL and adds it under the
+selected group on the worker thread. `d` asks `y/n`, then drops the feed and
+its items.
 
-Article: title, feed, author, date, then the item body as text. HTML from
-the feed body goes through `html2text` at the column width. Links in the body
-are numbered `[1]` and listed at the end. Every row that carries a URL (the
-item link, a `[text][n]` reference, a footnote and its wrapped
-continuation) is repainted after the frame wrapped in OSC 8, so Ctrl+click
-in Herdr gets the whole URL even when it spans rows. Relative footnote URLs
-are resolved against the item link. `1`..`9` opens link `n` from the
-keyboard. `f`
-fetches the page and runs Readability extraction for feeds that ship only a
-summary.
+Article: title, feed, author, date, item link, then the body through
+`html2text` at the column width. Links in the body become `[text][n]` with a
+`[n]: url` list at the end. The article is laid out row by row, and after
+each frame every row that carries a URL is rewritten wrapped in OSC 8: the
+item link, each `[text][n]`, each footnote and its wrapped continuation.
+The terminal then holds the whole URL on every cell, so Ctrl+click works on
+a URL that spans rows. ratatui has no hyperlink attribute; the rewrite
+repeats the text it drew, so its buffer stays right. Relative footnote URLs
+resolve against the item link. `1`..`9` opens link `n`.
 
-Extraction is `dom_smoothie`, a pure-Rust port of Mozilla's readability.js.
-No Node, no JS runtime. The fetched HTML and the page URL go in; title,
-byline, and cleaned article HTML come out; `html2text` renders that.
+`f` fetches the page and extracts the article with `dom_smoothie`, a Rust
+port of Mozilla's readability.js: page HTML and URL in, title, byline, and
+clean HTML out, rendered by `html2text`. For feeds that ship a summary only.
 
-## Keys
-
-| Key | Does |
-| --- | --- |
-| `j` `k` / arrows | Move in the focused column |
-| `h` `l` / `Tab` | Move between columns |
-| `Space` | Fold a group in the feeds column; page down elsewhere |
-| `g` `G` / `PgUp` `PgDn` | Top, bottom, page |
-| `Enter` / `Esc` | Open item / back (narrow mode) |
-| `r` / `R` | Refresh selected feed / all feeds |
-| `n` / `p` | Next / previous unread item |
-| `m` / `M` | Toggle read on item / mark feed read |
-| `s` | Toggle star |
-| `u` | Show unread only |
-| `/` | Search titles |
-| `o` | Open item in browser |
-| `1`..`9` | Open that numbered link from the article |
-| `y` | Copy item link |
-| `f` | Fetch full article text |
-| `a` | Add feed by URL |
-| `d` | Delete feed |
-| `Z` | Toggle zoom |
-| `?` | Help |
-| `q` | Quit pane |
-| click | Focus and select; again on an item opens it, on a group folds it |
-| wheel | Focus the column under the pointer; move its list or scroll the article |
+Opening an item marks it read: `Enter`, click, or wheel into the article.
+Moving the selection does not.
 
 ## Feeds file
 
-`<config dir>/feeds.txt`. One feed per line, `Name | URL`. A `# Heading`
-line starts a group. `//` starts a comment. A `#` line with a `|` in it is a
-commented-out feed, not a heading.
+`Name | URL` per line, `# Heading` for a group, `//` for a comment, and a
+`#` line containing `|` is a commented-out feed. `add` and `remove` change
+one line and leave the rest alone. `import` merges OPML the same way and
+fetches nothing. `export` writes OPML with one level of groups. The file is
+the source of truth; the store syncs to it on every refresh, add, remove,
+and import.
 
-```text
-# Tech
-Ars Technica | https://feeds.arstechnica.com/arstechnica/index
-Hacker News | https://hnrss.org/frontpage
-// Cloudflare blocks this one:
-#   Ausretrogamer | https://ausretrogamer.com/feed/
-
-# Games
-Rock Paper Shotgun | https://www.rockpapershotgun.com/feed
-```
-
-`add` fetches the URL first. A URL that is not a feed is refused and nothing
-is written. Without `--name` the feed's title is the name. The new line goes
-after the last feed of its group, or under a new heading at the end.
-`remove` deletes the one line. Both edit the file in place, so comments and
-layout survive. `import` merges an OPML file the same way, skipping URLs
-already present, and fetches nothing; `--replace` writes the file fresh.
-`export` prints OPML with one level of groups. The file is the source of
-truth; the store syncs to it on every refresh, add, remove, and import.
+`add` fetches the URL first. Not a feed: refused, nothing written. No name:
+the feed's title.
 
 ## Fetch and store
 
-- HTTP: `ureq` with rustls. `If-None-Match` and `If-Modified-Since` from the
-  last response. A 304 costs nothing. Redirects followed, 10 max. Per-feed
-  timeout from config. Eight fetches at a time on a thread pool.
-- Parse: `feed-rs`. Covers RSS 0.9x, 1.0, 2.0, Atom, JSON Feed.
-- Item identity: feed URL plus `guid`, else `link`, else hash of title and
-  date. A changed title on the same guid updates in place. An item the feed
-  does not date keeps the time it was first seen, stepped back by its
-  position so the feed's order holds.
-- Store: `rusqlite` with the bundled feature, one file
-  `HERDR_PLUGIN_STATE_DIR/rss.db`, WAL mode. Two tables:
+- `ureq` with rustls. `If-None-Match` and `If-Modified-Since` from the last
+  response; a 304 costs one small request. Ten redirects. Per-feed timeout
+  from config. Eight fetches at a time on plain threads.
+- `feed-rs` parses RSS 0.9x, 1.0, 2.0, Atom, JSON Feed.
+- Item id: FNV-1a over the feed URL and the entry id, else the link, else
+  title and date. Sixteen hex chars, stable across builds. A changed title
+  on the same id updates in place. An item without a date keeps the time it
+  was first seen, stepped back by its position so the feed's order holds.
+- `rusqlite`, bundled, one file `HERDR_PLUGIN_STATE_DIR/rss.db`, WAL:
 
 ```sql
-feeds (url PRIMARY KEY, name, grp, etag, last_modified, last_fetch,
-       last_error, position)
+feeds (url PRIMARY KEY, name, grp, position, etag, last_modified,
+       last_fetch, last_error)
 items (id PRIMARY KEY, feed_url, guid, title, link, author, published,
        summary_html, content_text, read, starred, fetched_at)
 ```
 
-- Refresh runs on a worker thread. The UI never blocks. While the pane is
-  open it refreshes every `refresh_minutes`, measured from the newest
-  fetch in the store, so a pane opened long after the startup hook
-  refreshes at once. A feed that fails shows `!` in the feeds column and
-  its error in the status line while it is selected.
-- Prune: after each refresh, delete unstarred items older than `keep_days`.
-  Unknown items already older than that are not stored, so a refresh does
-  not churn.
-- Startup hook: `herdr-rss refresh --detach` warms the cache when Herdr
-  starts, so the first open is not a wait.
+- Refresh runs on a worker thread. While the pane is open it repeats every
+  `refresh_minutes`, measured from the newest fetch in the store, so a pane
+  opened long after the startup hook refreshes at once.
+- After each refresh, unstarred items older than `keep_days` are deleted.
+  Unknown items already older than that are never stored.
+- The startup hook runs `refresh --detach`, which re-runs itself in its own
+  process group with output in `refresh.log`, so Herdr's hook returns while
+  the fetch runs.
 
-## CLI
-
-Every subcommand takes `--json`. Agents use these.
-
-| Command | Does |
-| --- | --- |
-| `herdr-rss refresh [--feed URL] [--detach]` | Fetch and store |
-| `herdr-rss list [--unread] [--starred] [--feed URL] [--limit N]` | Print items |
-| `herdr-rss show <id> [--width N]` | Print one item's text |
-| `herdr-rss mark <id>... [--unread]` | Set read state |
-| `herdr-rss star <id>...` | Toggle star |
-| `herdr-rss add <url> [--name N] [--group G]` | Fetch, then add to feeds.txt |
-| `herdr-rss remove <url>` | Drop a feed and its items |
-| `herdr-rss import <file.opml> [--replace]` / `export` | OPML in and out |
-| `herdr-rss --launch-decision` | Reads `pane list` on stdin, prints `OPEN`, `FOCUS <id>`, or `CLOSE <id>` |
-
-A `skills/herdr-rss/SKILL.md` teaches an agent the list and show commands.
-
-## Code layout
+## Code
 
 ```text
-herdr-rss/
-  herdr-plugin.toml
-  Cargo.toml
-  Makefile                 # check: fmt clippy test audit md-lint
-  .markdownlint-cli2.jsonc
-  .pre-commit-config.yaml
-  scripts/open.sh          # split launcher
-  scripts/open-full.sh     # zoomed launcher
-  scripts/release.sh
-  skills/herdr-rss/SKILL.md
-  src/
-    main.rs                # subcommand dispatch; no args = TUI
-    cli.rs                 # list, show, mark, star, add, remove, import, export
-    opml.rs                # OPML parse and render
-    config.rs              # config.toml
-    feeds.rs               # feeds.txt parse, in-place add and remove
-    fetch.rs               # ureq, conditional GET, thread pool
-    parse.rs               # feed-rs to Item
-    store.rs               # rusqlite schema, queries, prune
-    html.rs                # html2text, link numbering
-    readability.rs         # full-article extraction via dom_smoothie
-    launch.rs              # launch decision from pane list JSON
-    herdr.rs               # HERDR_BIN_PATH wrapper: pane zoom, pane close
-    time.rs                # now, age, date
-    tui/
-      mod.rs               # terminal setup, event loop, refresh tick
-      app.rs               # state and actions; tested against an in-memory store
-      ui.rs                # feeds, items, article columns; status line; help
-      article.rs           # article rows with their hyperlink spans
-      keys.rs              # key to action; HELP table
-  tests/fixtures/          # pane_list.json; feed captures: rss2, atom, jsonfeed, broken
-  .github/workflows/ci.yml # fmt, clippy, test, release build on ubuntu and macos; audit; md lint
+herdr-plugin.toml          # pane, three actions, startup hook
+scripts/open.sh            # split launcher; open-full.sh wraps it zoomed
+scripts/release.sh         # bump, check, tag, push, GitHub release
+skills/herdr-rss/SKILL.md  # the CLI for agents
+src/
+  main.rs                  # dispatch; no args = reader
+  cli.rs                   # refresh, list, show, mark, star, add, remove, import, export
+  config.rs                # config.toml
+  feeds.rs                 # feeds.txt parse, in-place add and remove
+  opml.rs                  # OPML parse and render
+  fetch.rs                 # ureq, conditional GET, thread pool
+  parse.rs                 # feed-rs to Item
+  store.rs                 # rusqlite
+  html.rs                  # html2text
+  readability.rs           # dom_smoothie
+  launch.rs                # open / focus / close from pane list JSON
+  herdr.rs                 # plugin env, HERDR_BIN_PATH calls
+  time.rs                  # now, age, date
+  tui/mod.rs               # terminal, event loop, tick, hyperlink repaint
+  tui/app.rs               # state and actions, tested against an in-memory store
+  tui/ui.rs                # columns, status line, help
+  tui/article.rs           # article rows and their URL spans
+  tui/keys.rs              # key to action, HELP table
+tests/fixtures/            # pane_list.json; feed captures: rss2, atom, jsonfeed, broken
 ```
 
-Unit tests live beside the code they test.
+Dependencies: `ratatui`, `feed-rs`, `ureq`, `rusqlite`, `html2text`,
+`dom_smoothie`, `quick-xml`, `url`, `chrono`, `arboard`, `serde`,
+`serde_json`, `toml`. All I/O is blocking, on worker threads where the pane
+would otherwise wait.
 
-Dependencies: `ratatui`, `crossterm`, `feed-rs`, `ureq` (rustls), `rusqlite`
-(bundled), `html2text`, `dom_smoothie`, `serde`, `serde_json`, `toml`,
-`arboard` for the clipboard. All I/O is blocking on worker threads.
-
-## Manifest
-
-```toml
-id = "shindakun.herdr-rss"
-name = "Herdr RSS"
-version = "0.1.0"
-min_herdr_version = "0.9.0"
-description = "Read RSS, Atom, and JSON feeds in a split or zoomed pane."
-platforms = ["linux", "macos"]
-
-[[build]]
-command = ["cargo", "build", "--release"]
-
-[[panes]]
-id = "reader"
-title = "Feeds"
-placement = "split"
-command = ["./target/release/herdr-rss"]
-
-[[actions]]
-id = "open"
-title = "Open feeds"
-command = ["bash", "scripts/open.sh"]
-
-[[actions]]
-id = "open-full"
-title = "Open feeds full screen"
-command = ["bash", "scripts/open-full.sh"]
-
-[[actions]]
-id = "refresh"
-title = "Refresh feeds"
-command = ["./target/release/herdr-rss", "refresh"]
-
-[[startup]]
-command = ["./target/release/herdr-rss", "refresh", "--detach"]
-```
-
-Keybinding in `~/.config/herdr/config.toml`:
-
-```toml
-[[keys.command]]
-key = "prefix+n"
-type = "plugin_action"
-command = "shindakun.herdr-rss.open"
-description = "open feeds"
-
-[[keys.command]]
-key = "prefix+shift+n"
-type = "plugin_action"
-command = "shindakun.herdr-rss.open-full"
-description = "open feeds full screen"
-```
+`make check` runs fmt, clippy, tests, `cargo audit`, and markdownlint; CI
+runs the same on Ubuntu and macOS.
 
 ## Milestones
 
-1. Done. Feeds file, fetch, parse, store. `refresh` and `list --json` run
-   against the fixtures and the real feeds.txt. Conditional GETs, prune,
-   dateless items keep their first-seen time.
-2. Done. Reader pane: three columns wide, one narrow. Read state, stars,
-   unread filter, next and previous unread, `o`, `y`, `Z`, `1`..`9` for
-   numbered links, mouse click and wheel, refresh on a worker thread, error
-   marker on a failed feed, help overlay.
-3. Done. Manifest, split and zoomed launchers, startup hook, `refresh`
-   action, skill file, release script. Linked and opened from a real Herdr
-   session in both placements.
-4. Done. Auto refresh every `refresh_minutes` while the pane is open. A
-   failed feed's error shows in the status line while it is selected.
-   Wheel or click into the article marks the item read.
-5. Done. `/` search, `a` add and `d` delete from the pane, `remove` and
-   `import` / `export` on the CLI, `//` comments in feeds.txt, in-place
-   file edits so comments survive.
-6. `f` full-article fetch through `dom_smoothie`. First release.
+1. Done. Feeds file, fetch, parse, store, `refresh` and `list --json`.
+2. Done. Reader pane, read state, stars, mouse, hyperlinks, numbered links.
+3. Done. Manifest, launchers, startup hook, skill, release script.
+4. Done. Auto refresh, failed-feed error in the status line.
+5. Done. Search, add and delete from the pane, `remove`, OPML, comments in
+   feeds.txt.
+6. `f` full-article fetch. First release.
 7. Launcher focus and close paths tried from a bound key.
 
 ## Not in v1

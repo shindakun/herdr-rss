@@ -32,7 +32,7 @@ pub struct Config {
     pub refresh_minutes: u64,
     /// Per-feed HTTP timeout.
     pub fetch_timeout_secs: u64,
-    /// Unstarred items older than this are pruned on start.
+    /// Unstarred items older than this are dropped after a refresh.
     pub keep_days: u64,
     /// Command that receives the URL on `o`. Default per OS.
     pub browser: Option<String>,

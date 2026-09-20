@@ -5,7 +5,7 @@ description: Read the user's RSS feeds from a Herdr session. Use when asked what
 
 # herdr-rss
 
-The plugin binary is a CLI over the same store the reader pane uses. Find it with `herdr plugin list` (the `plugin_root`, then `target/release/herdr-rss`). It needs two variables Herdr sets for plugin commands:
+The plugin binary is a CLI over the store the reader pane uses. It is `target/release/herdr-rss` under the `plugin_root` that `herdr plugin list` prints. Set the two variables Herdr gives plugin commands:
 
 ```sh
 export HERDR_PLUGIN_CONFIG_DIR="$(herdr plugin config-dir shindakun.herdr-rss)"
@@ -16,7 +16,7 @@ Every subcommand takes `--json`. Items have a 16-character `id`.
 
 | Command | Does |
 | --- | --- |
-| `herdr-rss refresh` | Fetch every feed; 209 feeds take about 25 seconds |
+| `herdr-rss refresh` | Fetch every feed; slow with hundreds of feeds |
 | `herdr-rss list --unread --limit 20 --json` | Unread items, newest first |
 | `herdr-rss list --feed URL --json` | One feed's items |
 | `herdr-rss show ID --json` | One item with its `summary_html`; without `--json`, as text |

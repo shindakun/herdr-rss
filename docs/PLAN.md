@@ -123,7 +123,9 @@ SQLite mirrors it on every start and on `a` / `d`.
   timeout from config. Eight fetches at a time on a thread pool.
 - Parse: `feed-rs`. Covers RSS 0.9x, 1.0, 2.0, Atom, JSON Feed.
 - Item identity: feed URL plus `guid`, else `link`, else hash of title and
-  date. A changed title on the same guid updates in place.
+  date. A changed title on the same guid updates in place. An item the feed
+  does not date keeps the time it was first seen, stepped back by its
+  position so the feed's order holds.
 - Store: `rusqlite` with the bundled feature, one file
   `HERDR_PLUGIN_STATE_DIR/rss.db`, WAL mode. Two tables:
 
@@ -136,7 +138,9 @@ items (id PRIMARY KEY, feed_url, guid, title, link, author, published,
 
 - Refresh runs on a worker thread. The UI never blocks. A feed that fails
   shows `!` in the feeds column and its error in the status line.
-- Prune: on start, delete unstarred items older than `keep_days`.
+- Prune: after each refresh, delete unstarred items older than `keep_days`.
+  Unknown items already older than that are not stored, so a refresh does
+  not churn.
 - Startup hook: `herdr-rss refresh --detach` warms the cache when Herdr
   starts, so the first open is not a wait.
 
@@ -147,8 +151,8 @@ Every subcommand takes `--json`. Agents use these.
 | Command | Does |
 | --- | --- |
 | `herdr-rss refresh [--feed URL] [--detach]` | Fetch and store |
-| `herdr-rss list [--unread] [--feed URL] [--limit N]` | Print items |
-| `herdr-rss show <id>` | Print one item's text |
+| `herdr-rss list [--unread] [--starred] [--feed URL] [--limit N]` | Print items |
+| `herdr-rss show <id> [--width N]` | Print one item's text |
 | `herdr-rss mark <id>... [--unread]` | Set read state |
 | `herdr-rss star <id>...` | Toggle star |
 | `herdr-rss add <url> [--name N] [--group G]` | Append to feeds.txt |

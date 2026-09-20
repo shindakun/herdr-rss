@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Lobsters</title>
+    <link>https://lobste.rs/</link>
+    <atom:link href="https://lobste.rs/rss?token=u6gmkigibafhnqrs45pvl8v8edq0ekhzyvgwtyjs5n0dccwyfiqxutfwh76v" rel="self"/>
+    <description></description>
+    <pubDate>Sat, 19 Sep 2026 10:44:52 -0500</pubDate>
+    <ttl>120</ttl>
+    <item>
+      <title>AI Is an Elite Crime Spree</title>
+      <link>https://www.thebignewsletter.com/p/ai-is-an-elite-crime-spree</link>
+      <guid>https://lobste.rs/s/blmlco</guid>
+      <author>thebignewsletter.com via jcd</author>
+      <pubDate>Sat, 19 Sep 2026 10:44:52 -0500</pubDate>
+      <comments>https://lobste.rs/s/blmlco/ai_is_elite_crime_spree</comments>
+      <description>&lt;p&gt;&lt;a href="https://lobste.rs/s/blmlco/ai_is_elite_crime_spree"&gt;Comments&lt;/a&gt;&lt;/p&gt;</description>
+      <category>law</category>
+    </item>
+    <item>
+      <title>we have a year to fix security everywhere</title>
+      <link>https://jyn.dev/a-year-to-fix-security/</link>
+      <guid>https://lobste.rs/s/re9wk8</guid>
+      <author>jyn.dev via apropos</author>
+      <pubDate>Sat, 19 Sep 2026 14:27:46 -0500</pubDate>
+      <comments>https://lobste.rs/s/re9wk8/we_have_year_fix_security_everywhere</comments>
+      <description>&lt;p&gt;&lt;a href="https://lobste.rs/s/re9wk8/we_have_year_fix_security_everywhere"&gt;Comments&lt;/a&gt;&lt;/p&gt;</description>
+      <category>security</category>
+      <category>vibecoding</category>
+    </item>
+    <item>
+      <title>I Built Non-Autoregressive Decision Models a Year Ago. Then a Frontier Lab Called It a "Breakthrough"</title>
+      <link>https://dev.to/nandakishor_m_6cc0adfde9f/i-built-non-autoregressive-decision-models-a-year-ago-then-a-frontier-lab-called-it-a-18me</link>
+      <guid>https://lobste.rs/s/kaqsr5</guid>
+      <author>dev.to via Yogthos</author>
+      <pubDate>Sat, 19 Sep 2026 08:41:57 -0500</pubDate>
+      <comments>https://lobste.rs/s/kaqsr5/i_built_non_autoregressive_decision</comments>
+      <description>&lt;p&gt;&lt;a href="https://lobste.rs/s/kaqsr5/i_built_non_autoregressive_decision"&gt;Comments&lt;/a&gt;&lt;/p&gt;</description>
+      <category>ai</category>
+    </item>
+    <item>
+      <title>Thoughts on the Future of Web Browsers</title>
+      <link>https://sarahjamielewis.com/log/2026/future-of-web-browsers.html</link>
+      <guid>https://lobste.rs/s/96omjg</guid>
+      <author>sarahjamielewis.com via orib</author>
+      <pubDate>Sat, 19 Sep 2026 17:27:02 -0500</pubDate>
+      <comments>https://lobste.rs/s/96omjg/thoughts_on_future_web_browsers</comments>
+      <description>&lt;p&gt;&lt;a href="https://lobste.rs/s/96omjg/thoughts_on_future_web_browsers"&gt;Comments&lt;/a&gt;&lt;/p&gt;</description>
+      <category>browsers</category>
+    </item>
+    <item>
+      <title>Don’t Let Architecture Astronauts Scare You (2001)</title>
+      <link>https://www.joelonsoftware.com/2001/04/21/dont-let-architecture-astronauts-scare-you/</link>
+      <guid>https://lobste.rs/s/3xfxnj</guid>
+      <author>joelonsoftware.com via koala</author>
+      <pubDate>Sat, 19 Sep 2026 07:08:52 -0500</pubDate>
+      <comments>https://lobste.rs/s/3xfxnj/don_t_let_architecture_astronauts_scare</comments>
+      <description>&lt;p&gt;&lt;a href="https://lobste.rs/s/3xfxnj/don_t_let_architecture_astronauts_scare"&gt;Comments&lt;/a&gt;&lt;/p&gt;</description>
+      <category>programming</category>
+    </item>
+    <item>
+      <title>“The Secret Life of Circuits” is here</title>
+      <link>https://blog.coredump.cx/p/the-secret-life-of-circuits-is-here</link>
+      <guid>https://lobste.rs/s/sn8voe</guid>
+      <author>blog.coredump.cx via luke8086</author>
+      <pubDate>Sat, 19 Sep 2026 07:12:18 -0500</pubDate>
+      <comments>https://lobste.rs/s/sn8voe/secret_life_circuits_is_here</comments>
+      <description>&lt;p&gt;&lt;a href="https://lobste.rs/s/sn8voe/secret_life_circuits_is_here"&gt;Comments&lt;/a&gt;&lt;/p&gt;</description>
+      <category>hardware</category>
+    </item>
+    <item>
+      <title>kicking the tires on jev (TypeSafe's System One model) with 2048</title>
+      <link>https://gist.github.com/cablehead/bdf9ad946ceb26d9008976e49c9bfbbb</link>
+      <guid>https://lobste.rs/s/hmkk2c</guid>
+      <author>gist.github.com by ndyg</author>
+      <pubDate>Sat, 19 Sep 2026 07:38:11 -0500</pubDate>
+      <comments>https://lobste.rs/s/hmkk2c/kicking_tires_on_jev_typesafe_s_system_one</comments>
+      <description>&lt;p&gt;&lt;a href="https://lobste.rs/s/hmkk2c/kicking_tires_on_jev_typesafe_s_system_one"&gt;Comments&lt;/a&gt;&lt;/p&gt;</description>
+      <category>games</category>
+      <category>ai</category>
+      <category>vibecoding</category>
+    </item>
+    <item>
+      <title>What happens to TLDs when their country stops existing? (2022)</title>
+      <link>https://astrid.tech/2022/04/05/0/dead-tlds/</link>
+      <guid>https://lobste.rs/s/q75kgo</guid>
+      <author>astrid.tech via gavinmorrow</author>
+      <pubDate>Sat, 19 Sep 2026 06:53:28 -0500</pubDate>
+      <comments>https://lobste.rs/s/q75kgo/what_happens_tlds_when_their_country</comments>
+      <description>&lt;p&gt;&lt;a href="https://lobste.rs/s/q75kgo/what_happens_tlds_when_their_country"&gt;Comments&lt;/a&gt;&lt;/p&gt;</description>
+      <category>web</category>
+    </item>
+    <item>
+      <title>The scourge of x86 emulation</title>
+      <link>https://fex-emu.com/Scourge-of-emulation/</link>
+      <guid>https://lobste.rs/s/iq6w6l</guid>
+      <author>fex-emu.com via videah</author>
+      <pubDate>Sat, 19 Sep 2026 00:01:05 -0500</pubDate>
+      <comments>https://lobste.rs/s/iq6w6l/scourge_x86_emulation</comments>
+      <description>&lt;p&gt;&lt;a href="https://lobste.rs/s/iq6w6l/scourge_x86_emulation"&gt;Comments&lt;/a&gt;&lt;/p&gt;</description>
+      <category>hardware</category>
+    </item>
+    <item>
+      <title>V Language Review (2023)</title>
+      <link>https://n-skvortsov-1997.github.io/reviews/</link>
+      <guid>https://lobste.rs/s/1rjyeh</guid>
+      <author>n-skvortsov-1997.github.io via lr0</author>
+      <pubDate>Sat, 19 Sep 2026 17:36:30 -0500</pubDate>
+      <comments>https://lobste.rs/s/1rjyeh/v_language_review_2023</comments>
+      <description>&lt;p&gt;&lt;a href="https://lobste.rs/s/1rjyeh/v_language_review_2023"&gt;Comments&lt;/a&gt;&lt;/p&gt;</description>
+      <category>programming</category>
+    </item>
+    <item>
+      <title>Reviving the language that brought us the Jak &amp; Daxter Series</title>
+      <link>https://opengoal.dev/</link>
+      <guid>https://lobste.rs/s/xfeuet</guid>
+      <author>opengoal.dev via miro</author>
+      <pubDate>Sat, 19 Sep 2026 09:28:49 -0500</pubDate>
+      <comments>https://lobste.rs/s/xfeuet/reviving_language_brought_us_jak_daxter</comments>
+      <description>&lt;p&gt;&lt;a href="https://lobste.rs/s/xfeuet/reviving_language_brought_us_jak_daxter"&gt;Comments&lt;/a&gt;&lt;/p&gt;</description>
+      <category>lisp</category>
+      <category>games</category>
+    </item>
+    <item>
+      <title>Quarkdown: Turing-complete Markdown typesetting system</title>
+      <link>https://github.com/iamgio/quarkdown</link>
+      <guid>https://lobste.rs/s/wryj2p</guid>
+      <author>github.com by iamgio</author>
+      <pubDate>Sat, 19 Sep 2026 22:37:45 -0500</pubDate>
+      <comments>https://lobste.rs/s/wryj2p/quarkdown_turing_complete_markdown</comments>
+      <description>&lt;p&gt;&lt;a href="https://lobste.rs/s/wryj2p/quarkdown_turing_complete_markdown"&gt;Comments&lt;/a&gt;&lt;/p&gt;</description>
+      <category>programming</category>
+      <category>compilers</category>
+    </item>
+    <item>
+      <title>Thread-identity switcheroo for io_uring</title>
+      <link>https://lwn.net/SubscriberLink/1094303/50affb2e7bd3e698/</link>
+      <guid>https://lobste.rs/s/rpc7qb</guid>
+      <author>lwn.net via vinipsmaker</author>
+      <pubDate>Sat, 19 Sep 2026 13:42:48 -0500</pubDate>
+      <comments>https://lobste.rs/s/rpc7qb/thread_identity_switcheroo_for_io_uring</comments>
+      <description>&lt;p&gt;&lt;a href="https://lobste.rs/s/rpc7qb/thread_identity_switcheroo_for_io_uring"&gt;Comments&lt;/a&gt;&lt;/p&gt;</description>
+      <category>linux</category>
+      <category>performance</category>
+    </item>
+    <item>
+      <title>Write while learning</title>
+      <link>https://purplesyringa.moe/blog/write-while-learning/</link>
+      <guid>https://lobste.rs/s/ukzxid</guid>
+      <author>purplesyringa.moe via kreeft</author>
+      <pubDate>Sat, 19 Sep 2026 01:56:24 -0500</pubDate>
+      <comments>https://lobste.rs/s/ukzxid/write_while_learning</comments>
+      <description>&lt;p&gt;&lt;a href="https://lobste.rs/s/ukzxid/write_while_learning"&gt;Comments&lt;/a&gt;&lt;/p&gt;</description>
+      <category>practices</category>
+    </item>
+    <item>
+      <title>Typst makes big strides</title>
+      <link>https://lwn.net/Articles/1092993/</link>
+      <guid>https://lobste.rs/s/j4oyxa</guid>
+      <author>lwn.net via isuffix</author>
+      <pubDate>Fri, 18 Sep 2026 08:14:17 -0500</pubDate>
+      <comments>https://lobste.rs/s/j4oyxa/typst_makes_big_strides</comments>
+      <description>&lt;p&gt;&lt;a href="https://lobste.rs/s/j4oyxa/typst_makes_big_strides"&gt;Comments&lt;/a&gt;&lt;/p&gt;</description>
+      <category>programming</category>
+      <category>a11y</category>
+    </item>
+    <item>
+      <title>CleanShot’s bulldozed settings</title>
+      <link>https://unsung.aresluna.org/cleanshots-bulldozed-settings/</link>
+      <guid>https://lobste.rs/s/adploh</guid>
+      <author>unsung.aresluna.org via skycam</author>
+      <pubDate>Sat, 19 Sep 2026 16:25:34 -0500</pubDate>
+      <comments>https://lobste.rs/s/adploh/cleanshot_s_bulldozed_settings</comments>
+      <description>&lt;p&gt;&lt;a href="https://lobste.rs/s/adploh/cleanshot_s_bulldozed_settings"&gt;Comments&lt;/a&gt;&lt;/p&gt;</description>
+      <category>design</category>
+      <category>mac</category>
+    </item>
+    <item>
+      <title>Faster JSON parsing with SVE2 on ARM processors</title>
+      <link>https://lemire.me/blog/2026/09/18/faster-json-parsing-with-sve2-on-arm-processors/</link>
+      <guid>https://lobste.rs/s/1auq61</guid>
+      <author>lemire.me via fanf</author>
+      <pubDate>Sat, 19 Sep 2026 10:10:09 -0500</pubDate>
+      <comments>https://lobste.rs/s/1auq61/faster_json_parsing_with_sve2_on_arm</comments>
+      <description>&lt;p&gt;&lt;a href="https://lobste.rs/s/1auq61/faster_json_parsing_with_sve2_on_arm"&gt;Comments&lt;/a&gt;&lt;/p&gt;</description>
+      <category>assembly</category>
+      <category>performance</category>
+    </item>
+    <item>
+      <title>GPT-6 Astra Solves a WWI German Radio Cipher</title>
+      <link>https://www.prinzai.com/p/gpt-6-astra-solves-a-wwi-german-radio</link>
+      <guid>https://lobste.rs/s/ywnsld</guid>
+      <author>prinzai.com via rajtilakjee</author>
+      <pubDate>Sat, 19 Sep 2026 03:44:38 -0500</pubDate>
+      <comments>https://lobste.rs/s/ywnsld/gpt_6_astra_solves_wwi_german_radio_cipher</comments>
+      <description>&lt;p&gt;&lt;a href="https://lobste.rs/s/ywnsld/gpt_6_astra_solves_wwi_german_radio_cipher"&gt;Comments&lt;/a&gt;&lt;/p&gt;</description>
+      <category>cryptography</category>
+      <category>vibecoding</category>
+    </item>
+    <item>
+      <title>Union vs sum types</title>
+      <link>https://viralinstruction.com/posts/uniontypes/</link>
+      <guid>https://lobste.rs/s/cummnx</guid>
+      <author>viralinstruction.com via nrposner</author>
+      <pubDate>Sat, 19 Sep 2026 18:45:37 -0500</pubDate>
+      <comments>https://lobste.rs/s/cummnx/union_vs_sum_types</comments>
+      <description>&lt;p&gt;&lt;a href="https://lobste.rs/s/cummnx/union_vs_sum_types"&gt;Comments&lt;/a&gt;&lt;/p&gt;</description>
+      <category>rust</category>
+      <category>plt</category>
+    </item>
+    <item>
+      <title>LispBM: Concurrent Lisp for Microcontrollers</title>
+      <link>https://www.lispbm.com/</link>
+      <guid>https://lobste.rs/s/upvrzs</guid>
+      <author>lispbm.com via anex9d</author>
+      <pubDate>Sat, 19 Sep 2026 06:36:56 -0500</pubDate>
+      <comments>https://lobste.rs/s/upvrzs/lispbm_concurrent_lisp_for</comments>
+      <description>&lt;p&gt;&lt;a href="https://lobste.rs/s/upvrzs/lispbm_concurrent_lisp_for"&gt;Comments&lt;/a&gt;&lt;/p&gt;</description>
+      <category>lisp</category>
+      <category>hardware</category>
+    </item>
+    <item>
+      <title>There's no point at which turning your brain off will work</title>
+      <link>https://danluu.com/brain-off/</link>
+      <guid>https://lobste.rs/s/dd6if1</guid>
+      <author>danluu.com via binjip978</author>
+      <pubDate>Fri, 18 Sep 2026 12:15:40 -0500</pubDate>
+      <comments>https://lobste.rs/s/dd6if1/there_s_no_point_at_which_turning_your</comments>
+      <description>&lt;p&gt;&lt;a href="https://lobste.rs/s/dd6if1/there_s_no_point_at_which_turning_your"&gt;Comments&lt;/a&gt;&lt;/p&gt;</description>
+      <category>vibecoding</category>
+    </item>
+    <item>
+      <title>I don't like passkeys</title>
+      <link>https://hawksley.dev/blog/i-dont-like-passkeys</link>
+      <guid>https://lobste.rs/s/4a7qly</guid>
+      <author>hawksley.dev via eduard</author>
+      <pubDate>Fri, 18 Sep 2026 07:52:18 -0500</pubDate>
+      <comments>https://lobste.rs/s/4a7qly/i_don_t_like_passkeys</comments>
+      <description>&lt;p&gt;&lt;a href="https://lobste.rs/s/4a7qly/i_don_t_like_passkeys"&gt;Comments&lt;/a&gt;&lt;/p&gt;</description>
+      <category>security</category>
+    </item>
+    <item>
+      <title>Persistent Databases in the Browser with DuckDB-Wasm and OPFS</title>
+      <link>https://duckdb.org/2026/09/18/opfs-wasm</link>
+      <guid>https://lobste.rs/s/k5shc5</guid>
+      <author>duckdb.org via eatonphil</author>
+      <pubDate>Sat, 19 Sep 2026 13:46:39 -0500</pubDate>
+      <comments>https://lobste.rs/s/k5shc5/persistent_databases_browser_with</comments>
+      <description>&lt;p&gt;&lt;a href="https://lobste.rs/s/k5shc5/persistent_databases_browser_with"&gt;Comments&lt;/a&gt;&lt;/p&gt;</description>
+      <category>databases</category>
+    </item>
+    <item>
+      <title>Laya — 33ms Multilingual System 1 Decision Engine</title>
+      <link>https://laya.convaiinnovations.com/</link>
+      <guid>https://lobste.rs/s/ojukrw</guid>
+      <author>laya.convaiinnovations.com via elbart</author>
+      <pubDate>Sat, 19 Sep 2026 11:31:05 -0500</pubDate>
+      <comments>https://lobste.rs/s/ojukrw/laya_33ms_multilingual_system_1_decision</comments>
+      <description>&lt;p&gt;&lt;a href="https://lobste.rs/s/ojukrw/laya_33ms_multilingual_system_1_decision"&gt;Comments&lt;/a&gt;&lt;/p&gt;</description>
+      <category>science</category>
+      <category>ai</category>
+    </item>
+    <item>
+      <title>Saving another 100TB of RAM with math (and Rust)</title>
+      <link>https://blog.cloudflare.com/saving-100-tb-of-ram-with-math/</link>
+      <guid>https://lobste.rs/s/meo3ou</guid>
+      <author>blog.cloudflare.com via gnyeki</author>
+      <pubDate>Fri, 18 Sep 2026 19:28:07 -0500</pubDate>
+      <comments>https://lobste.rs/s/meo3ou/saving_another_100tb_ram_with_math_rust</comments>
+      <description>&lt;p&gt;&lt;a href="https://lobste.rs/s/meo3ou/saving_another_100tb_ram_with_math_rust"&gt;Comments&lt;/a&gt;&lt;/p&gt;</description>
+      <category>rust</category>
+      <category>performance</category>
+    </item>
+  </channel>
+</rss>

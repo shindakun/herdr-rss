@@ -2,7 +2,7 @@
 
 A [Herdr](https://herdr.dev) plugin that reads RSS, Atom, and JSON feeds in a terminal pane. Rust, one binary, no other runtime. Opens beside your work as a split or fills the terminal as a zoomed pane.
 
-Status: scaffold. The feeds file, config, and launcher work; the reader, fetcher, and store are next. The design is in [docs/PLAN.md](docs/PLAN.md).
+Status: the fetcher, store, and CLI work. The reader pane is next. The design is in [docs/PLAN.md](docs/PLAN.md).
 
 ## Install
 
@@ -33,6 +33,21 @@ Rock Paper Shotgun | https://www.rockpapershotgun.com/feed
 ```
 
 `herdr-rss add URL --name N --group G` appends a line. `import FILE.opml` and `export` convert to and from OPML.
+
+## CLI
+
+The plugin binary is also a CLI over the same store, for scripts and agents. Find it at `<plugin root>/target/release/herdr-rss` (`herdr plugin list` prints the root). It needs `HERDR_PLUGIN_CONFIG_DIR` and `HERDR_PLUGIN_STATE_DIR` set the way Herdr sets them for plugin commands; `herdr plugin config-dir shindakun.herdr-rss` prints the first, and the state dir is `~/.local/state/herdr/plugins/shindakun.herdr-rss`. Every subcommand takes `--json`.
+
+| Command | Does |
+| --- | --- |
+| `refresh [--feed URL] [--detach]` | Fetch and store; `--detach` returns at once and logs to `refresh.log` in the state dir |
+| `list [--unread] [--starred] [--feed URL] [--limit N]` | Items, newest first; 50 by default |
+| `show ID [--width N]` | One item as text |
+| `mark ID... [--unread]` | Set read state |
+| `star ID...` | Toggle the star |
+| `add URL [--name N] [--group G]` | Append to feeds.txt |
+
+A refresh sends `If-None-Match` and `If-Modified-Since`, so a feed that has not changed costs one small request. Eight fetches run at a time. Items older than `keep_days` are not stored, and stored items age out unless starred.
 
 ## Open it
 

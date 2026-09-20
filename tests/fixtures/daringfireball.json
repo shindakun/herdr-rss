@@ -1,0 +1,86 @@
+{
+  "version": "https://jsonfeed.org/version/1.1",
+  "title": "Daring Fireball",
+  "home_page_url": "https://daringfireball.net/",
+  "feed_url": "https://daringfireball.net/feeds/json",
+  "authors": [
+    {
+      "url": "https://twitter.com/gruber",
+      "name": "John Gruber"
+    }
+  ],
+  "icon": "https://daringfireball.net/graphics/apple-touch-icon.png",
+  "favicon": "https://daringfireball.net/graphics/favicon-64.png",
+  "items": [
+    {
+      "title": "Tyler Stalman\u2019s iPhone 18 Pro Camera Review",
+      "date_published": "2026-09-19T16:29:00Z",
+      "date_modified": "2026-09-19T16:29:01Z",
+      "id": "https://daringfireball.net/linked/2026/09/19/stalman-iphone-18-pro",
+      "url": "https://daringfireball.net/linked/2026/09/19/stalman-iphone-18-pro",
+      "external_url": "https://www.youtube.com/watch?v=m6cDErtCKAc",
+      "authors": [
+        {
+          "name": "John Gruber"
+        }
+      ],
+      "content_html": "\n<p>Splendid video. Love that Stalman shot photos side-by-side with a film SLR using Kodak Portra 400, for comparison to Apple\u2019s new film-look Photographic Styles.</p>\n\n<p class=\"x-netnewswire-hide\" style=\"padding-top: 1.5em;\"><em>Link: <strong><a href=\"https://www.youtube.com/watch?v=m6cDErtCKAc\">youtube.com/watch?v=m6cDErtCKAc</a></strong></em></p>\n"
+    },
+    {
+      "title": "Austin Mann\u2019s iPhone 18 Pro Camera Review, From Dunton, Colorado",
+      "date_published": "2026-09-19T15:37:39Z",
+      "date_modified": "2026-09-19T18:00:44Z",
+      "id": "https://daringfireball.net/linked/2026/09/19/mann-iphone-18-pro",
+      "url": "https://daringfireball.net/linked/2026/09/19/mann-iphone-18-pro",
+      "external_url": "https://www.austinmann.com/trek/iphone-18-pro-camera-review-dunton",
+      "authors": [
+        {
+          "name": "John Gruber"
+        }
+      ],
+      "content_html": "\n<p>Austin Mann:</p>\n\n<blockquote>\n  <p>I\u2019m here at the beautiful <a href=\"https://www.bydunton.com/destinations/rivercamp\">Dunton River Camp</a> in southwest\nColorado, where I\u2019ve spent the last week testing the new camera\nand features on the iPhone 18 Pro.</p>\n\n<p>Beyond the variable aperture and Pro Controls, Apple also built in\na bunch of other new features like Photographic Styles 3 with film\ntexture and grain control, 4K Time-lapse and Focus Tracking. As\nalways, when I start a field test I\u2019m asking one question:</p>\n\n<p><em>How will this new tech make our pictures and videos better?</em></p>\n</blockquote>\n\n<p>Outstanding example photos, a terrific video that illustrates how some of the new \u201cpro controls\u201d in the Camera app work, and some terrific examples of Photographic Styles 3.</p>\n\n<p>(I love how Mann takes these new phones to exotic locales around the globe each year, and I take them <a href=\"https://daringfireball.net/2026/09/the_iphones_18_pro#:~:text=WITH%20FILM%20TEXTURE%20AND%20GRAIN\">to the hardware store</a>.)</p>\n\n<p class=\"x-netnewswire-hide\" style=\"padding-top: 1.5em;\"><em>Link: <strong><a href=\"https://www.austinmann.com/trek/iphone-18-pro-camera-review-dunton\">austinmann.com/trek/iphone-18-pro-camera-review-dunton</a></strong></em></p>\n"
+    },
+    {
+      "title": "Just Me or Does This Argument Not Add Up?",
+      "date_published": "2026-09-18T21:01:43Z",
+      "date_modified": "2026-09-19T16:00:10Z",
+      "id": "https://daringfireball.net/linked/2026/09/18/sat-add-up",
+      "url": "https://daringfireball.net/linked/2026/09/18/sat-add-up",
+      "external_url": "https://www.nytimes.com/2026/09/16/opinion/university-of-california-sat.html?unlocked_article_code=1.CFE.bXBA.V6BFzBn1jlKG",
+      "authors": [
+        {
+          "name": "John Gruber"
+        }
+      ],
+      "content_html": "\n<p>Miriam Pawel, in an op-ed in The New York Times arguing that the University of California should not bring back the SAT requirement for admission:</p>\n\n<blockquote>\n  <p>What has made the University of California exceptional is its\ncommitment to increase access without sacrificing excellence.\n[...] Students on University of California campuses may struggle\nwith basic math, but they are graduating at record rates.</p>\n</blockquote>\n\n<p>A success story would be increasing the number of people with solid math skills. Printing degrees for students who struggle with basic math is not a success story, and sounds like the antithesis of \u201cacademic excellence\u201d.</p>\n\n<p class=\"x-netnewswire-hide\" style=\"padding-top: 1.5em;\"><em>Link: <strong><a href=\"https://www.nytimes.com/2026/09/16/opinion/university-of-california-sat.html?unlocked_article_code=1.CFE.bXBA.V6BFzBn1jlKG\">nytimes.com/2026/09/16/opinion/university-of-california-sat\u2026</a></strong></em></p>\n"
+    },
+    {
+      "title": "Will Oremus Is a Duo Doubter",
+      "date_published": "2026-09-18T20:42:31Z",
+      "date_modified": "2026-09-18T20:43:54Z",
+      "id": "https://daringfireball.net/linked/2026/09/18/oremus-duo-doubter",
+      "url": "https://daringfireball.net/linked/2026/09/18/oremus-duo-doubter",
+      "external_url": "https://www.theatlantic.com/technology/2026/09/apple-folding-iphone/688562/?gift=aQyUJR7AIw1mJWdQ6Ed6yE6RbvpIGGpQGFPIX827p48",
+      "authors": [
+        {
+          "name": "John Gruber"
+        }
+      ],
+      "content_html": "\n<p>Will Oremus, writing for The Atlantic last week, \u201cOkay, Sure, a Folding iPhone\u201d (gift link):</p>\n\n<blockquote>\n  <p>Apple\u2019s next big invention, the company revealed at a launch event\nin Cupertino, is a $2,000 iPhone that sports\u2009\u2014\u2009get ready\u2009\u2014\u2009a\n\u201cremarkable hinge.\u201d</p>\n</blockquote>\n\n<p>Is it not possible for a hinge to be remarkable?</p>\n\n<blockquote>\n  <p>This is the iPhone Duo, a foldable gadget that opens like a book\nto reveal a capacious 7.6-inch screen. Billed as the most\nversatile iPhone, it can be used in folded or unfolded form, and\nin split-screen or full-screen modes. The screen appears seamless\nwhen open, which is a clever engineering feat. Yet an iPhone that\nblossoms into an iPad Mini seems unlikely to change many lives\u2009\u2014\u2009especially at the price of a MacBook Pro.</p>\n</blockquote>\n\n<p>Why is it strange for an iPhone to have a similar price to a MacBook Pro? For many people the phone is their primary computer, the most important and personal device in their life. Not me. Not Oremus. Probably not you. But I bet there are a lot more people out there who would rather have a $2500 iPhone and a $700 MacBook Neo than who would want a $2500 MacBook Pro and a $700 iPhone.</p>\n\n<p>The oddity isn\u2019t that the Duo is priced from $2000\u2013$3200, it\u2019s that it\u2019s taken Apple 20 years to get to an iPhone with prices like this.</p>\n\n<blockquote>\n  <p>And foldable smartphones have been on the market since Samsung\npopularized the category, in 2019. In the pantheon of \u201cone more\nthings,\u201d the Duo feels like a dud.</p>\n</blockquote>\n\n<p>This is half correct. Samsung has had foldables on the market since 2019. They have, as yet, <a href=\"https://daringfireball.net/linked/2026/09/07/birchler-folding-iphone-predictions\">not been popularized</a>. \u201cThe Duo feels like a dud\u201d has a bit of \u201c<a href=\"http://apple.slashdot.org/article.pl?sid=01/10/23/1816257&amp;mode=thread&amp;tid=107\">No wireless. Less space than a nomad. Lame.</a>\u201d energy to it. If an all-new iPhone form factor doesn\u2019t qualify for \u201cone more thing\u201d not much will.</p>\n\n<p class=\"x-netnewswire-hide\" style=\"padding-top: 1.5em;\"><em>Link: <strong><a href=\"https://www.theatlantic.com/technology/2026/09/apple-folding-iphone/688562/?gift=aQyUJR7AIw1mJWdQ6Ed6yE6RbvpIGGpQGFPIX827p48\">theatlantic.com/technology/2026/09/apple-folding-iphone\u2026</a></strong></em></p>\n"
+    },
+    {
+      "title": "Apple Releases Xcode 27.1, First SDK With Support for iPhone Duo",
+      "date_published": "2026-09-18T19:58:22Z",
+      "date_modified": "2026-09-20T00:04:38Z",
+      "id": "https://daringfireball.net/linked/2026/09/18/xcode-27-1-duo",
+      "url": "https://daringfireball.net/linked/2026/09/18/xcode-27-1-duo",
+      "external_url": "https://developer.apple.com/news/?id=nyuppv9r",
+      "authors": [
+        {
+          "name": "John Gruber"
+        }
+      ],
+      "content_html": "\n<p>In addition to the Duo-specific 27.1 SDK, which allows third-party developers to get started adapting apps to the Duo\u2019s new screen sizes and layouts, Apple\u2019s developer site also has Figma and Sketch design kits.</p>\n\n<p class=\"x-netnewswire-hide\" style=\"padding-top: 1.5em;\"><em>Link: <strong><a href=\"https://developer.apple.com/news/?id=nyuppv9r\">developer.apple.com/news/?id=nyuppv9r</a></strong></em></p>\n"
+    }
+  ]
+}

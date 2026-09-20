@@ -92,7 +92,7 @@ Three columns: feeds, items, article. Under 100 columns the pane shows one at a 
 | `?` | Help |
 | `q` | Quit |
 | click | Focus and select; again on an item opens it, on a group folds it |
-| wheel | Move the list under the pointer, or scroll the article |
+| wheel | Focus the column under the pointer; move its list or scroll the article |
 
 ## Configure
 

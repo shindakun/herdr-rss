@@ -101,7 +101,7 @@ byline, and cleaned article HTML come out; `html2text` renders that.
 | `?` | Help |
 | `q` | Quit pane |
 | click | Focus and select; again on an item opens it, on a group folds it |
-| wheel | Move the list under the pointer, or scroll the article |
+| wheel | Focus the column under the pointer; move its list or scroll the article |
 
 ## Feeds file
 

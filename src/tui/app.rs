@@ -645,14 +645,14 @@ impl App {
         }
     }
 
-    /// Wheel: move the selection under the pointer, or scroll the article.
+    /// Wheel: focus the column under the pointer, then move its selection
+    /// or scroll the article.
     pub fn wheel(&mut self, x: u16, y: u16, down: bool) -> Result<(), String> {
         let Some(col) = self.areas.column_at(x, y) else {
             return Ok(());
         };
-        let keep = self.column;
         self.column = col;
-        let r = match (col, down) {
+        match (col, down) {
             (Column::Article, true) => {
                 self.article_scroll = self.article_scroll.saturating_add(3);
                 Ok(())
@@ -663,9 +663,7 @@ impl App {
             }
             (_, true) => self.down(),
             (_, false) => self.up(),
-        };
-        self.column = keep;
-        r
+        }
     }
 
     // ----- refresh -----------------------------------------------------
@@ -963,11 +961,12 @@ mod tests {
         assert_eq!(a.column, Column::Article);
         assert!(a.items[1].read);
 
-        // Wheel over the items column moves that selection and keeps focus.
+        // Wheel over the items column takes focus there and moves it.
         a.wheel(30, 5, true).unwrap();
         assert_eq!(a.item_sel, 2);
-        assert_eq!(a.column, Column::Article);
+        assert_eq!(a.column, Column::Items);
         a.wheel(70, 5, true).unwrap();
+        assert_eq!(a.column, Column::Article);
         assert_eq!(a.article_scroll, 3);
         a.click(200, 200).unwrap();
         assert_eq!(a.column, Column::Article, "a miss changes nothing");

@@ -260,15 +260,27 @@ description = "open feeds full screen"
 
 ## Milestones
 
-1. Feeds file, fetch, parse, store. `herdr-rss refresh` and `list --json`
-   work against the fixtures and against the real feeds.txt.
-2. TUI with three columns, read state, stars, `o`, `y`. Wide and narrow
-   layouts.
-3. Launchers, manifest, `pane zoom`. Link the plugin, bind the keys, open it
-   from a real Herdr session in both placements.
-4. Background refresh worker, startup hook, prune, error display.
-5. Search, unread filter, `a` / `d`, OPML import and export.
-6. Full-article fetch, numbered links, skill file, release script.
+Done:
+
+1. Feeds file, fetch, parse, store. `refresh` and `list --json` run against
+   the fixtures and the real feeds.txt. Conditional GETs, prune, dateless
+   items keep their first-seen time.
+2. Reader pane: three columns wide, one narrow. Read state, stars, unread
+   filter, next and previous unread, `o`, `y`, `Z`, refresh on a worker
+   thread, error marker on a failed feed, help overlay.
+3. Manifest, split and zoomed launchers, startup hook, `refresh` action,
+   skill file, release script. Linked and opened from a real Herdr session
+   in both placements.
+
+Left:
+
+4. Auto refresh every `refresh_minutes` while the pane is open. Show a
+   failed feed's error in the status line.
+5. `/` search, `a` add and `d` delete feed from the pane, OPML import and
+   export.
+6. `f` full-article fetch through `dom_smoothie`; `1`..`9` opens a numbered
+   link. First release.
+7. Launcher focus and close paths tried from a bound key.
 
 ## Not in v1
 

@@ -1,0 +1,78 @@
+# herdr-rss
+
+A [Herdr](https://herdr.dev) plugin that reads RSS, Atom, and JSON feeds in a terminal pane. Rust, one binary, no other runtime. Opens beside your work as a split or fills the terminal as a zoomed pane.
+
+Status: scaffold. The feeds file, config, and launcher work; the reader, fetcher, and store are next. The design is in [docs/PLAN.md](docs/PLAN.md).
+
+## Install
+
+```sh
+herdr plugin install shindakun/herdr-rss
+```
+
+Needs `cargo`; the install step builds the binary. Linux and macOS.
+
+For local development, link the checkout instead:
+
+```sh
+cargo build --release
+herdr plugin link /path/to/herdr-rss
+```
+
+## Feeds
+
+`$(herdr plugin config-dir shindakun.herdr-rss)/feeds.txt`. One feed per line, `Name | URL`. A `# Heading` line starts a group.
+
+```text
+# Tech
+Ars Technica | https://feeds.arstechnica.com/arstechnica/index
+Hacker News | https://hnrss.org/frontpage
+
+# Games
+Rock Paper Shotgun | https://www.rockpapershotgun.com/feed
+```
+
+`herdr-rss add URL --name N --group G` appends a line. `import FILE.opml` and `export` convert to and from OPML.
+
+## Open it
+
+Bind the two actions in `~/.config/herdr/config.toml`, then `herdr server reload-config`:
+
+```toml
+[[keys.command]]
+key = "prefix+n"
+type = "plugin_action"
+command = "shindakun.herdr-rss.open"
+description = "open feeds"
+
+[[keys.command]]
+key = "prefix+shift+n"
+type = "plugin_action"
+command = "shindakun.herdr-rss.open-full"
+description = "open feeds full screen"
+```
+
+`open` splits beside the focused pane; `open-full` zooms over it. Either key pressed again focuses the reader, and a third press closes it.
+
+## Configure
+
+`$(herdr plugin config-dir shindakun.herdr-rss)/config.toml`, every key optional:
+
+```toml
+open_direction = "right"   # or "down"
+refresh_minutes = 30       # 0 disables auto refresh while the pane is open
+fetch_timeout_secs = 15
+keep_days = 30             # unstarred items older than this are pruned
+browser = "open"           # command that receives the URL; default per OS
+```
+
+## Development
+
+```sh
+make check   # fmt, clippy, test, audit, markdown lint; same as CI
+make hooks   # install pre-commit
+```
+
+## License
+
+MIT.

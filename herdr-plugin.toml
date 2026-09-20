@@ -1,0 +1,33 @@
+id = "shindakun.herdr-rss"
+name = "Herdr RSS"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "Read RSS, Atom, and JSON feeds in a split or zoomed pane."
+platforms = ["linux", "macos"]
+
+[[build]]
+command = ["cargo", "build", "--release"]
+
+[[panes]]
+id = "reader"
+title = "Feeds"
+placement = "split"
+command = ["./target/release/herdr-rss"]
+
+[[actions]]
+id = "open"
+title = "Open feeds"
+command = ["bash", "scripts/open.sh"]
+
+[[actions]]
+id = "open-full"
+title = "Open feeds full screen"
+command = ["bash", "scripts/open-full.sh"]
+
+[[actions]]
+id = "refresh"
+title = "Refresh feeds"
+command = ["./target/release/herdr-rss", "refresh"]
+
+[[startup]]
+command = ["./target/release/herdr-rss", "refresh", "--detach"]

@@ -1,0 +1,5 @@
+{"id":"cli:pane:list","result":{"panes":[
+{"agent":"claude","agent_status":"idle","cwd":"/Users/steve/Code/goat-herdr","focused":false,"foreground_cwd":"/Users/steve/Code/goat-herdr","pane_id":"w3:p1","revision":3,"scroll":{"max_offset_from_bottom":0,"offset_from_bottom":0,"viewport_rows":43},"tab_id":"w3:t1","terminal_id":"term_65bdb984c2d4c1","terminal_title":"Herdr alerting system plugin","workspace_id":"w3"},
+{"agent_status":"unknown","cwd":"/Users/steve/Code/herdr-rss","focused":false,"foreground_cwd":"/Users/steve/Code/herdr-rss","label":"Feeds","pane_id":"w3:p19","revision":0,"scroll":{"max_offset_from_bottom":0,"offset_from_bottom":0,"viewport_rows":43},"tab_id":"w3:t1","terminal_id":"term_65bdc0ed10a278","workspace_id":"w3"},
+{"agent":"claude","agent_status":"working","cwd":"/Users/steve/Code/herdr-rss","focused":true,"foreground_cwd":"/Users/steve/Code/herdr-rss","pane_id":"w5:p1","revision":9,"scroll":{"max_offset_from_bottom":0,"offset_from_bottom":0,"viewport_rows":45},"tab_id":"w5:t1","terminal_id":"term_65be243121b7915","terminal_title":"Herdr RSS viewer plugin plan","workspace_id":"w5"}
+]}}

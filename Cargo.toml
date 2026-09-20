@@ -1,0 +1,27 @@
+[package]
+name = "herdr-rss"
+version = "0.1.0"
+edition = "2021"
+description = "Herdr plugin that reads RSS, Atom, and JSON feeds in a split or zoomed pane"
+license = "MIT"
+repository = "https://github.com/shindakun/herdr-rss"
+readme = "README.md"
+keywords = ["herdr", "rss", "atom", "feed", "tui"]
+categories = ["command-line-utilities"]
+
+[dependencies]
+arboard = "3"
+crossterm = "0.29"
+dom_smoothie = "0.18"
+feed-rs = "2"
+html2text = "0.17"
+ratatui = "0.30"
+rusqlite = { version = "0.40", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "1"
+ureq = { version = "3", features = ["json"] }
+
+[profile.release]
+lto = true
+strip = true

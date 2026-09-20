@@ -25,7 +25,10 @@ pub const HELP: &[(&str, &str)] = &[
     ("?", "this help"),
     ("q", "quit"),
     ("click", "focus and select; again on an item opens it"),
-    ("wheel", "focus that column; move the list or scroll the article"),
+    (
+        "wheel",
+        "focus that column; move the list or scroll the article",
+    ),
 ];
 
 pub fn handle_mouse(app: &mut App, m: MouseEvent) -> Result<(), String> {

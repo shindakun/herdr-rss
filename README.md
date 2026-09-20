@@ -86,10 +86,13 @@ Three columns: feeds, items, article. Under 100 columns the pane shows one at a 
 | `s` | Toggle star |
 | `u` | Show unread only |
 | `o` | Open item in browser |
+| `1`..`9` | Open that numbered link from the article (wrapped URLs cannot be clicked) |
 | `y` | Copy item link |
 | `Z` | Toggle zoom |
 | `?` | Help |
 | `q` | Quit |
+| click | Focus and select; again on an item opens it, on a group folds it |
+| wheel | Move the list under the pointer, or scroll the article |
 
 ## Configure
 

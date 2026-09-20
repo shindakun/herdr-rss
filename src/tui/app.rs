@@ -11,6 +11,8 @@ use crate::herdr::PluginEnv;
 use crate::html;
 use crate::store::{FeedRow, ItemRow, ListQuery, Store};
 use crate::time;
+use ratatui::layout::Rect;
+use ratatui::widgets::ListState;
 
 /// Below this many columns the pane shows one column at a time.
 pub const NARROW_BELOW: u16 = 100;
@@ -55,7 +57,35 @@ pub struct App {
     pub quit: bool,
     pub width: u16,
     pub height: u16,
+    /// Where the last frame put each column, for mouse hits.
+    pub areas: Areas,
+    /// List widget state kept across frames so a click can map a row to
+    /// an index through the scroll offset.
+    pub feeds_state: ListState,
+    pub items_state: ListState,
     refresh_rx: Option<Receiver<Result<RefreshReport, String>>>,
+}
+
+#[derive(Debug, Default, Clone, Copy)]
+pub struct Areas {
+    pub feeds: Rect,
+    pub items: Rect,
+    pub article: Rect,
+}
+
+impl Areas {
+    pub fn column_at(&self, x: u16, y: u16) -> Option<Column> {
+        let hit = |r: Rect| r.width > 0 && r.contains((x, y).into());
+        if hit(self.feeds) {
+            Some(Column::Feeds)
+        } else if hit(self.items) {
+            Some(Column::Items)
+        } else if hit(self.article) {
+            Some(Column::Article)
+        } else {
+            None
+        }
+    }
 }
 
 impl App {
@@ -81,6 +111,9 @@ impl App {
             quit: false,
             width: 120,
             height: 40,
+            areas: Areas::default(),
+            feeds_state: ListState::default(),
+            items_state: ListState::default(),
             refresh_rx: None,
         };
         app.reload_feeds()?;
@@ -470,6 +503,50 @@ impl App {
             self.status = Some("no link".into());
             return;
         };
+        self.open_url(&link);
+    }
+
+    /// Opens the article's numbered link `n` (1-based, as printed in the
+    /// body). Wrapped URLs cannot be clicked in the terminal, so this is the
+    /// way to follow one.
+    pub fn open_link(&mut self, n: usize) {
+        let links = self.article_links();
+        match n.checked_sub(1).and_then(|i| links.get(i)) {
+            Some(url) => {
+                let url = url.clone();
+                self.open_url(&url);
+            }
+            None => self.status = Some(format!("no link [{n}]")),
+        }
+    }
+
+    /// The `[n]: url` footnotes html2text appends to the body, in order.
+    /// Rendered very wide so no footnote wraps; numbering does not depend on
+    /// width, so it matches what the pane shows.
+    pub fn article_links(&self) -> Vec<String> {
+        let Some(it) = self.selected_item() else {
+            return Vec::new();
+        };
+        let text = match (&it.content_text, &it.summary_html) {
+            (Some(t), _) => t.clone(),
+            (None, Some(h)) => html::to_text(h, 4000),
+            (None, None) => return Vec::new(),
+        };
+        let mut links: Vec<(usize, String)> = text
+            .lines()
+            .filter_map(|l| {
+                let rest = l.strip_prefix('[')?;
+                let (n, rest) = rest.split_once("]: ")?;
+                let n: usize = n.parse().ok()?;
+                let url = rest.trim();
+                (!url.is_empty()).then(|| (n, url.to_string()))
+            })
+            .collect();
+        links.sort_by_key(|(n, _)| *n);
+        links.into_iter().map(|(_, u)| u).collect()
+    }
+
+    fn open_url(&mut self, link: &str) {
         let cmd = self.config.browser.clone().unwrap_or_else(|| {
             if cfg!(target_os = "macos") {
                 "open".into()
@@ -484,7 +561,7 @@ impl App {
         };
         let result = Command::new(program)
             .args(parts)
-            .arg(&link)
+            .arg(link)
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null())
@@ -521,6 +598,74 @@ impl App {
         if let Err(e) = env.run(&args) {
             self.status = Some(e);
         }
+    }
+
+    // ----- mouse -------------------------------------------------------
+
+    /// Left click: focus the column under the pointer and select the row.
+    /// A click on the selected item opens it; a click on the selected group
+    /// row folds it.
+    pub fn click(&mut self, x: u16, y: u16) -> Result<(), String> {
+        let Some(col) = self.areas.column_at(x, y) else {
+            return Ok(());
+        };
+        let was = self.column;
+        self.column = col;
+        match col {
+            Column::Feeds => {
+                let Some(idx) = row_at(self.areas.feeds, self.feeds_state.offset(), y) else {
+                    return Ok(());
+                };
+                if idx >= self.rows.len() {
+                    return Ok(());
+                }
+                if idx == self.feed_sel && was == Column::Feeds {
+                    if let Row::Group(_) = self.rows[idx] {
+                        return self.toggle_fold();
+                    }
+                }
+                self.feed_sel = idx;
+                self.reload_items()
+            }
+            Column::Items => {
+                let Some(idx) = row_at(self.areas.items, self.items_state.offset(), y) else {
+                    return Ok(());
+                };
+                if idx >= self.items.len() {
+                    return Ok(());
+                }
+                if idx == self.item_sel && was != Column::Feeds {
+                    return self.open_article();
+                }
+                self.item_sel = idx;
+                self.article_scroll = 0;
+                Ok(())
+            }
+            Column::Article => Ok(()),
+        }
+    }
+
+    /// Wheel: move the selection under the pointer, or scroll the article.
+    pub fn wheel(&mut self, x: u16, y: u16, down: bool) -> Result<(), String> {
+        let Some(col) = self.areas.column_at(x, y) else {
+            return Ok(());
+        };
+        let keep = self.column;
+        self.column = col;
+        let r = match (col, down) {
+            (Column::Article, true) => {
+                self.article_scroll = self.article_scroll.saturating_add(3);
+                Ok(())
+            }
+            (Column::Article, false) => {
+                self.article_scroll = self.article_scroll.saturating_sub(3);
+                Ok(())
+            }
+            (_, true) => self.down(),
+            (_, false) => self.up(),
+        };
+        self.column = keep;
+        r
     }
 
     // ----- refresh -----------------------------------------------------
@@ -619,6 +764,17 @@ impl App {
         }
         parts.join(" · ")
     }
+}
+
+/// The list index at screen row `y` inside a bordered list `area`, given the
+/// list's scroll offset.
+fn row_at(area: Rect, offset: usize, y: u16) -> Option<usize> {
+    let top = area.y + 1;
+    let bottom = area.y + area.height.saturating_sub(1);
+    if area.height < 3 || y < top || y >= bottom {
+        return None;
+    }
+    Some(offset + (y - top) as usize)
 }
 
 #[cfg(test)]
@@ -775,6 +931,65 @@ mod tests {
         assert_eq!(a.article_text(40), "body");
         a.item_sel = 3;
         assert_eq!(a.article_text(40), "body");
+    }
+
+    #[test]
+    fn clicks_select_open_and_fold() {
+        let mut a = app();
+        a.areas = Areas {
+            feeds: Rect::new(0, 0, 24, 20),
+            items: Rect::new(24, 0, 40, 20),
+            article: Rect::new(64, 0, 40, 20),
+        };
+        assert_eq!(row_at(a.areas.feeds, 0, 0), None, "border");
+        assert_eq!(row_at(a.areas.feeds, 0, 1), Some(0));
+        assert_eq!(row_at(a.areas.feeds, 5, 3), Some(7));
+        assert_eq!(row_at(a.areas.feeds, 0, 19), None, "bottom border");
+
+        // Click the Tech group row: select it. Click again: fold it.
+        a.click(2, 3).unwrap();
+        assert_eq!(a.column, Column::Feeds);
+        assert_eq!(a.rows[a.feed_sel], Row::Group("Tech".into()));
+        assert_eq!(titles(&a), ["a-1", "b-1", "a-2"]);
+        a.click(2, 3).unwrap();
+        assert!(a.folded.contains("Tech"));
+
+        // Click the second item: select. Click it again: open, marks read.
+        a.click(30, 2).unwrap();
+        assert_eq!(a.column, Column::Items);
+        assert_eq!(a.item_sel, 1);
+        assert!(!a.items[1].read);
+        a.click(30, 2).unwrap();
+        assert_eq!(a.column, Column::Article);
+        assert!(a.items[1].read);
+
+        // Wheel over the items column moves that selection and keeps focus.
+        a.wheel(30, 5, true).unwrap();
+        assert_eq!(a.item_sel, 2);
+        assert_eq!(a.column, Column::Article);
+        a.wheel(70, 5, true).unwrap();
+        assert_eq!(a.article_scroll, 3);
+        a.click(200, 200).unwrap();
+        assert_eq!(a.column, Column::Article, "a miss changes nothing");
+    }
+
+    #[test]
+    fn numbered_links_come_from_the_footnotes() {
+        let mut a = app();
+        a.items[0].summary_html = Some(
+            "<p>See <a href=\"https://x.example/one\">one</a> and <a href=\"https://x.example/two\">two</a>.</p>".into(),
+        );
+        let links = a.article_links();
+        assert_eq!(links, ["https://x.example/one", "https://x.example/two"]);
+        assert!(
+            a.article_text(20).lines().count() > 4,
+            "narrow render wraps"
+        );
+        a.config.browser = Some("true".into());
+        a.open_link(2);
+        assert_eq!(a.status.as_deref(), Some("opened https://x.example/two"));
+        a.open_link(3);
+        assert_eq!(a.status.as_deref(), Some("no link [3]"));
     }
 
     #[test]

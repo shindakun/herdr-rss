@@ -67,7 +67,8 @@ Item rows: unread dot, feed short name, title, age. Sort is newest first.
 
 Article: title, feed, author, date, then the item body as text. HTML from
 the feed body goes through `html2text` at the column width. Links in the body
-are numbered `[1]` and listed at the end; `1`..`9` opens that link. `f`
+are numbered `[1]` and listed at the end; `1`..`9` opens that link, since a
+URL wrapped across two rows cannot be clicked in the terminal. `f`
 fetches the page and runs Readability extraction for feeds that ship only a
 summary.
 
@@ -91,6 +92,7 @@ byline, and cleaned article HTML come out; `html2text` renders that.
 | `u` | Show unread only |
 | `/` | Search titles |
 | `o` | Open item in browser |
+| `1`..`9` | Open that numbered link from the article |
 | `y` | Copy item link |
 | `f` | Fetch full article text |
 | `a` | Add feed by URL |
@@ -98,6 +100,8 @@ byline, and cleaned article HTML come out; `html2text` renders that.
 | `Z` | Toggle zoom |
 | `?` | Help |
 | `q` | Quit pane |
+| click | Focus and select; again on an item opens it, on a group folds it |
+| wheel | Move the list under the pointer, or scroll the article |
 
 ## Feeds file
 
@@ -264,8 +268,9 @@ description = "open feeds full screen"
    against the fixtures and the real feeds.txt. Conditional GETs, prune,
    dateless items keep their first-seen time.
 2. Done. Reader pane: three columns wide, one narrow. Read state, stars,
-   unread filter, next and previous unread, `o`, `y`, `Z`, refresh on a
-   worker thread, error marker on a failed feed, help overlay.
+   unread filter, next and previous unread, `o`, `y`, `Z`, `1`..`9` for
+   numbered links, mouse click and wheel, refresh on a worker thread, error
+   marker on a failed feed, help overlay.
 3. Done. Manifest, split and zoomed launchers, startup hook, `refresh`
    action, skill file, release script. Linked and opened from a real Herdr
    session in both placements.
@@ -273,8 +278,7 @@ description = "open feeds full screen"
    failed feed's error in the status line.
 5. `/` search, `a` add and `d` delete feed from the pane, OPML import and
    export.
-6. `f` full-article fetch through `dom_smoothie`; `1`..`9` opens a numbered
-   link. First release.
+6. `f` full-article fetch through `dom_smoothie`. First release.
 7. Launcher focus and close paths tried from a bound key.
 
 ## Not in v1

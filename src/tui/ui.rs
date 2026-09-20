@@ -4,10 +4,10 @@
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Borders, Clear, List, ListItem, ListState, Paragraph, Wrap};
+use ratatui::widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap};
 use ratatui::Frame;
 
-use super::app::{App, Column, Row};
+use super::app::{App, Areas, Column, Row};
 use super::keys::HELP;
 use crate::time;
 
@@ -20,10 +20,20 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
     let [main, status] = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).areas(area);
 
     if app.narrow() {
+        app.areas = Areas::default();
         match app.column {
-            Column::Feeds => draw_feeds(frame, app, main),
-            Column::Items => draw_items(frame, app, main),
-            Column::Article => draw_article(frame, app, main),
+            Column::Feeds => {
+                app.areas.feeds = main;
+                draw_feeds(frame, app, main);
+            }
+            Column::Items => {
+                app.areas.items = main;
+                draw_items(frame, app, main);
+            }
+            Column::Article => {
+                app.areas.article = main;
+                draw_article(frame, app, main);
+            }
         }
     } else {
         let [feeds, items, article] = Layout::horizontal([
@@ -32,6 +42,11 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
             Constraint::Fill(1),
         ])
         .areas(main);
+        app.areas = Areas {
+            feeds,
+            items,
+            article,
+        };
         draw_feeds(frame, app, feeds);
         draw_items(frame, app, items);
         draw_article(frame, app, article);
@@ -75,7 +90,7 @@ fn highlight() -> Style {
     Style::default().bg(Color::Blue).fg(Color::White)
 }
 
-fn draw_feeds(frame: &mut Frame, app: &App, area: Rect) {
+fn draw_feeds(frame: &mut Frame, app: &mut App, area: Rect) {
     let inner = area.width.saturating_sub(2) as usize;
     let lines: Vec<ListItem> = app
         .rows
@@ -119,17 +134,17 @@ fn draw_feeds(frame: &mut Frame, app: &App, area: Rect) {
             ListItem::new(text).style(style)
         })
         .collect();
-    let mut state = ListState::default().with_selected(Some(app.feed_sel));
+    app.feeds_state.select(Some(app.feed_sel));
     frame.render_stateful_widget(
         List::new(lines)
             .block(block("Feeds", app.column == Column::Feeds))
             .highlight_style(highlight()),
         area,
-        &mut state,
+        &mut app.feeds_state,
     );
 }
 
-fn draw_items(frame: &mut Frame, app: &App, area: Rect) {
+fn draw_items(frame: &mut Frame, app: &mut App, area: Rect) {
     let inner = area.width.saturating_sub(2) as usize;
     let now = time::now();
     let show_feed = !matches!(app.rows.get(app.feed_sel), Some(Row::Feed(_)));
@@ -169,7 +184,7 @@ fn draw_items(frame: &mut Frame, app: &App, area: Rect) {
         Some(Row::Group(g)) => g.clone(),
         Some(Row::Feed(i)) => app.feeds[*i].name.clone(),
     };
-    let mut state = ListState::default().with_selected(if app.items.is_empty() {
+    app.items_state.select(if app.items.is_empty() {
         None
     } else {
         Some(app.item_sel)
@@ -179,7 +194,7 @@ fn draw_items(frame: &mut Frame, app: &App, area: Rect) {
             .block(block(&title, app.column == Column::Items))
             .highlight_style(highlight()),
         area,
-        &mut state,
+        &mut app.items_state,
     );
 }
 

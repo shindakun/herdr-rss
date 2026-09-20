@@ -7,7 +7,10 @@ mod ui;
 
 use std::time::Duration;
 
-use ratatui::crossterm::event::{self, Event, KeyEventKind};
+use ratatui::crossterm::event::{
+    self, DisableMouseCapture, EnableMouseCapture, Event, KeyEventKind,
+};
+use ratatui::crossterm::execute;
 
 use crate::config::Config;
 use crate::herdr::PluginEnv;
@@ -26,7 +29,11 @@ pub fn run() -> Result<(), String> {
     }
 
     let mut terminal = ratatui::try_init().map_err(|e| format!("terminal: {e}"))?;
+    let mouse = execute!(std::io::stdout(), EnableMouseCapture).is_ok();
     let result = event_loop(&mut terminal, &mut app);
+    if mouse {
+        let _ = execute!(std::io::stdout(), DisableMouseCapture);
+    }
     ratatui::restore();
     result
 }
@@ -39,7 +46,7 @@ fn event_loop(terminal: &mut ratatui::DefaultTerminal, app: &mut App) -> Result<
         if event::poll(TICK).map_err(|e| format!("poll: {e}"))? {
             match event::read().map_err(|e| format!("read: {e}"))? {
                 Event::Key(key) if key.kind == KeyEventKind::Press => keys::handle(app, key)?,
-                Event::Resize(_, _) => {}
+                Event::Mouse(m) => keys::handle_mouse(app, m)?,
                 _ => {}
             }
         }

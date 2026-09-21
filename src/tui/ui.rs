@@ -230,6 +230,9 @@ fn draw_article(frame: &mut Frame, app: &mut App, area: Rect) {
         meta.push(a.clone());
     }
     meta.push(time::date(it.published));
+    if app.showing_full_text() {
+        meta.push("full text".into());
+    }
     let rows = article::layout(
         &it.title,
         &meta.join(" · "),

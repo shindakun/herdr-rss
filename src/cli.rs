@@ -11,7 +11,7 @@ use crate::fetch::{self, Cache, Outcome};
 use crate::herdr::PluginEnv;
 use crate::store::{FetchRecord, ItemRow, ListQuery, Store};
 use crate::time::{age, date, now};
-use crate::{html, opml, parse};
+use crate::{html, opml, parse, readability};
 
 /// Flags, `--key value` options, and positionals from an argv slice.
 struct Args {
@@ -21,6 +21,18 @@ struct Args {
 }
 
 const VALUE_OPTS: &[&str] = &["--feed", "--limit", "--name", "--group", "--width"];
+
+/// Fetches the item's page and stores the extracted article. Returns the
+/// article HTML.
+pub fn fetch_article(ctx: &Ctx, id: &str) -> Result<readability::Article, String> {
+    let it = ctx.store.get(id)?.ok_or_else(|| format!("no item {id}"))?;
+    let link = it.link.ok_or("item has no link")?;
+    let timeout = Duration::from_secs(ctx.config.fetch_timeout_secs.max(1));
+    let page = fetch::fetch_page(&fetch::agent(timeout), &link)?;
+    let article = readability::extract(&page, &link)?;
+    ctx.store.set_content(id, &article.html)?;
+    Ok(article)
+}
 
 impl Args {
     fn parse(args: &[String]) -> Result<Self, String> {
@@ -288,11 +300,15 @@ fn truncate(s: &str, n: usize) -> String {
     }
 }
 
-/// `show ID [--width N] [--json]`: one item as text.
+/// `show ID [--full] [--width N] [--json]`: one item as text. `--full`
+/// fetches the page first and shows the extracted article.
 pub fn show(args: &[String]) -> Result<(), String> {
     let a = Args::parse(args)?;
     let id = a.positional.first().ok_or("show: missing ID")?;
     let ctx = Ctx::open()?;
+    if a.flag("--full") {
+        fetch_article(&ctx, id)?;
+    }
     let it = ctx.store.get(id)?.ok_or_else(|| format!("no item {id}"))?;
     if a.json() {
         return print_json(&it);
@@ -315,9 +331,10 @@ pub fn show(args: &[String]) -> Result<(), String> {
     }
     println!();
     let body = it
-        .content_text
-        .clone()
-        .or_else(|| it.summary_html.as_deref().map(|h| html::to_text(h, width)))
+        .content_html
+        .as_deref()
+        .or(it.summary_html.as_deref())
+        .map(|h| html::to_text(h, width))
         .unwrap_or_default();
     println!("{body}");
     Ok(())
@@ -593,7 +610,7 @@ mod tests {
             author: None,
             published: 0,
             summary_html: None,
-            content_text: None,
+            content_html: None,
             read: false,
             starred: true,
         };

@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS items (
     author TEXT,
     published INTEGER NOT NULL,
     summary_html TEXT,
-    content_text TEXT,
+    content_html TEXT,
     read INTEGER NOT NULL DEFAULT 0,
     starred INTEGER NOT NULL DEFAULT 0,
     fetched_at INTEGER NOT NULL
@@ -66,7 +66,8 @@ pub struct ItemRow {
     pub author: Option<String>,
     pub published: i64,
     pub summary_html: Option<String>,
-    pub content_text: Option<String>,
+    /// Extracted full article, when `f` or `show --full` fetched it.
+    pub content_html: Option<String>,
     pub read: bool,
     pub starred: bool,
 }
@@ -117,6 +118,20 @@ impl Store {
         conn.pragma_update(None, "foreign_keys", "ON")
             .map_err(sql_err)?;
         conn.execute_batch(SCHEMA).map_err(sql_err)?;
+        // Databases from before the column was renamed.
+        let old = conn
+            .prepare("PRAGMA table_info(items)")
+            .and_then(|mut s| {
+                s.query_map([], |r| r.get::<_, String>(1))?
+                    .collect::<Result<Vec<_>, _>>()
+            })
+            .map_err(sql_err)?
+            .iter()
+            .any(|c| c == "content_text");
+        if old {
+            conn.execute_batch("ALTER TABLE items RENAME COLUMN content_text TO content_html")
+                .map_err(sql_err)?;
+        }
         Ok(Self { conn })
     }
 
@@ -255,7 +270,7 @@ impl Store {
     pub fn list(&self, q: &ListQuery) -> Result<Vec<ItemRow>, String> {
         let mut sql = String::from(
             "SELECT i.id, i.feed_url, f.name, i.title, i.link, i.author, i.published,
-                    i.summary_html, i.content_text, i.read, i.starred
+                    i.summary_html, i.content_html, i.read, i.starred
              FROM items i JOIN feeds f ON f.url = i.feed_url WHERE 1 = 1",
         );
         let mut args: Vec<rusqlite::types::Value> = Vec::new();
@@ -292,7 +307,7 @@ impl Store {
         self.conn
             .query_row(
                 "SELECT i.id, i.feed_url, f.name, i.title, i.link, i.author, i.published,
-                        i.summary_html, i.content_text, i.read, i.starred
+                        i.summary_html, i.content_html, i.read, i.starred
                  FROM items i JOIN feeds f ON f.url = i.feed_url WHERE i.id = ?1",
                 params![id],
                 row_to_item,
@@ -338,6 +353,21 @@ impl Store {
             .map_err(sql_err)
     }
 
+    /// Stores the extracted article for an item.
+    pub fn set_content(&self, id: &str, html: &str) -> Result<(), String> {
+        let n = self
+            .conn
+            .execute(
+                "UPDATE items SET content_html = ?2 WHERE id = ?1",
+                params![id, html],
+            )
+            .map_err(sql_err)?;
+        if n == 0 {
+            return Err(format!("no item {id}"));
+        }
+        Ok(())
+    }
+
     /// Deletes unstarred items published before `before`.
     pub fn prune(&self, before: i64) -> Result<usize, String> {
         self.conn
@@ -359,7 +389,7 @@ fn row_to_item(r: &rusqlite::Row) -> rusqlite::Result<ItemRow> {
         author: r.get(5)?,
         published: r.get(6)?,
         summary_html: r.get(7)?,
-        content_text: r.get(8)?,
+        content_html: r.get(8)?,
         read: r.get::<_, i64>(9)? == 1,
         starred: r.get::<_, i64>(10)? == 1,
     })
@@ -534,6 +564,39 @@ mod tests {
             (all[0].published, all[1].published),
             (1000, 999),
             "a refetch does not move them"
+        );
+    }
+
+    #[test]
+    fn content_is_stored_and_the_old_column_name_migrates() {
+        let mut s = Store::open_in_memory().unwrap();
+        s.sync_feeds(&[feed("a")]).unwrap();
+        s.upsert_items(&[item("a", "1", 100)], 1, None).unwrap();
+        let id = item_id("https://a/feed", "1");
+        s.set_content(&id, "<p>full</p>").unwrap();
+        assert_eq!(
+            s.get(&id).unwrap().unwrap().content_html.as_deref(),
+            Some("<p>full</p>")
+        );
+        assert!(s.set_content("nope", "x").is_err());
+
+        let old = Connection::open_in_memory().unwrap();
+        old.execute_batch(
+            "CREATE TABLE feeds (url TEXT PRIMARY KEY, name TEXT NOT NULL, grp TEXT NOT NULL DEFAULT '',
+                position INTEGER NOT NULL DEFAULT 0, etag TEXT, last_modified TEXT, last_fetch INTEGER, last_error TEXT);
+             CREATE TABLE items (id TEXT PRIMARY KEY, feed_url TEXT NOT NULL REFERENCES feeds(url) ON DELETE CASCADE,
+                guid TEXT NOT NULL, title TEXT NOT NULL, link TEXT, author TEXT, published INTEGER NOT NULL,
+                summary_html TEXT, content_text TEXT, read INTEGER NOT NULL DEFAULT 0,
+                starred INTEGER NOT NULL DEFAULT 0, fetched_at INTEGER NOT NULL);
+             INSERT INTO feeds (url, name) VALUES ('https://a/feed', 'a');
+             INSERT INTO items (id, feed_url, guid, title, published, content_text, fetched_at)
+                VALUES ('x', 'https://a/feed', 'g', 't', 1, '<p>old</p>', 1);",
+        )
+        .unwrap();
+        let s = Store::init(old).unwrap();
+        assert_eq!(
+            s.get("x").unwrap().unwrap().content_html.as_deref(),
+            Some("<p>old</p>")
         );
     }
 

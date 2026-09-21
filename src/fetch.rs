@@ -76,6 +76,15 @@ pub fn fetch_one(agent: &Agent, url: &str, cache: &Cache) -> Outcome {
     }
 }
 
+/// Fetches a web page as text. Bytes that are not UTF-8 are replaced.
+pub fn fetch_page(agent: &Agent, url: &str) -> Result<String, String> {
+    match fetch_one(agent, url, &Cache::default()) {
+        Outcome::Fetched { body, .. } => Ok(String::from_utf8_lossy(&body).into_owned()),
+        Outcome::NotModified => Err("unexpected 304".into()),
+        Outcome::Failed(e) => Err(e),
+    }
+}
+
 /// Fetches every URL, `PARALLEL` at a time. Results come back in input order.
 pub fn fetch_all(jobs: Vec<(String, Cache)>, timeout: Duration) -> Vec<(String, Outcome)> {
     let n = jobs.len();

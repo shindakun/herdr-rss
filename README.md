@@ -59,6 +59,7 @@ Three columns: feeds, items, article. Under 100 columns the pane shows one at a 
 | `o` | Open item in browser |
 | `1`..`9` | Open that numbered link from the article |
 | `y` | Copy item link |
+| `f` | Fetch the full article from its page |
 | `Z` | Toggle zoom |
 | `?` | Help |
 | `q` | Quit |
@@ -66,6 +67,8 @@ Three columns: feeds, items, article. Under 100 columns the pane shows one at a 
 | wheel | Focus the column under the pointer; move its list or scroll the article |
 
 Opening an item marks it read, by `Enter`, click, or wheel. A feed marked `!` failed its last fetch; select it and the status line shows why. The pane refreshes every `refresh_minutes` on its own.
+
+`f` fetches the item's page and swaps in the article text, extracted the way Firefox's reader view does it. The header then says `full text`. A site that blocks non-browser clients shows its HTTP status instead.
 
 Links in the article are terminal hyperlinks: the item link, `[text][n]` references, and the `[n]: url` footnotes. Ctrl+click opens them, wrapped or not.
 
@@ -113,7 +116,7 @@ Every subcommand takes `--json`.
 | --- | --- |
 | `refresh [--feed URL] [--detach]` | Fetch and store; `--detach` returns at once and logs to `refresh.log` in the state dir |
 | `list [--unread] [--starred] [--feed URL] [--limit N]` | Items, newest first; 50 by default |
-| `show ID [--width N]` | One item as text |
+| `show ID [--full] [--width N]` | One item as text; `--full` fetches and extracts the article first |
 | `mark ID... [--unread]` | Set read state |
 | `star ID...` | Toggle the star |
 | `add URL [--name N] [--group G]` | Fetch the URL, then add it; a URL that is not a feed is refused |

@@ -25,7 +25,7 @@ use config::Config;
 use herdr::PluginEnv;
 
 const USAGE: &str = "usage: herdr-rss [refresh [--feed URL] [--detach] | list [--unread] [--starred] [--feed URL] [--limit N] \
-| show ID [--width N] | mark ID... [--unread] | star ID... | add URL [--name N] [--group G] | remove URL \
+| show ID [--full] [--width N] | mark ID... [--unread] | star ID... | add URL [--name N] [--group G] | remove URL \
 | import FILE [--replace] | export] [--json]";
 
 fn main() -> ExitCode {

@@ -82,6 +82,8 @@ pub struct App {
     pub hyperlinks: Vec<Hyperlink>,
     refresh_rx: Option<Receiver<Result<RefreshReport, String>>>,
     add_rx: Option<Receiver<Result<crate::feeds::Feed, String>>>,
+    /// (item id, extracted article html) from `f`.
+    article_rx: Option<Receiver<(String, Result<String, String>)>>,
 }
 
 /// Text at a screen position that the terminal should treat as a link.
@@ -148,6 +150,7 @@ impl App {
             hyperlinks: Vec::new(),
             refresh_rx: None,
             add_rx: None,
+            article_rx: None,
         };
         app.reload_feeds()?;
         app.reload_items()?;
@@ -263,16 +266,19 @@ impl App {
             }
         }
         let text = it
-            .content_text
-            .clone()
-            .or_else(|| {
-                it.summary_html
-                    .as_deref()
-                    .map(|h| html::to_text(h, width as usize))
-            })
+            .content_html
+            .as_deref()
+            .or(it.summary_html.as_deref())
+            .map(|h| html::to_text(h, width as usize))
             .unwrap_or_default();
         self.article_cache = Some((it.id.clone(), width, text.clone()));
         text
+    }
+
+    /// The `content_html` came from `f`; the header says so.
+    pub fn showing_full_text(&self) -> bool {
+        self.selected_item()
+            .is_some_and(|i| i.content_html.is_some())
     }
 
     // ----- movement ----------------------------------------------------
@@ -572,11 +578,10 @@ impl App {
             return Vec::new();
         };
         let base = it.link.as_deref().and_then(|l| url::Url::parse(l).ok());
-        let text = match (&it.content_text, &it.summary_html) {
-            (Some(t), _) => t.clone(),
-            (None, Some(h)) => html::to_text(h, 4000),
-            (None, None) => return Vec::new(),
+        let Some(h) = it.content_html.as_deref().or(it.summary_html.as_deref()) else {
+            return Vec::new();
         };
+        let text = html::to_text(h, 4000);
         let mut links: Vec<(usize, String)> = text
             .lines()
             .filter_map(|l| {
@@ -649,6 +654,60 @@ impl App {
         if let Err(e) = env.run(&args) {
             self.status = Some(e);
         }
+    }
+
+    // ----- full article ------------------------------------------------
+
+    /// `f`: fetch the item's page on a worker thread and show the extracted
+    /// article in place of the feed's summary.
+    pub fn fetch_article(&mut self) {
+        let Some(it) = self.selected_item() else {
+            return;
+        };
+        if it.link.is_none() {
+            self.status = Some("no link".into());
+            return;
+        }
+        if self.env.is_none() {
+            self.status = Some("not running under herdr".into());
+            return;
+        }
+        if self.article_rx.is_some() {
+            self.status = Some("already fetching an article".into());
+            return;
+        }
+        let id = it.id.clone();
+        let (tx, rx) = mpsc::channel();
+        std::thread::spawn(move || {
+            let result = Ctx::open()
+                .and_then(|ctx| cli::fetch_article(&ctx, &id))
+                .map(|a| a.html);
+            let _ = tx.send((id, result));
+        });
+        self.article_rx = Some(rx);
+        self.status = Some("fetching article…".into());
+    }
+
+    fn poll_article(&mut self) -> Result<(), String> {
+        let Some(rx) = &self.article_rx else {
+            return Ok(());
+        };
+        let Ok((id, result)) = rx.try_recv() else {
+            return Ok(());
+        };
+        self.article_rx = None;
+        match result {
+            Ok(html) => {
+                if let Some(it) = self.items.iter_mut().find(|i| i.id == id) {
+                    it.content_html = Some(html);
+                }
+                self.article_cache = None;
+                self.article_scroll = 0;
+                self.status = Some("full text".into());
+            }
+            Err(e) => self.status = Some(format!("article: {e}")),
+        }
+        Ok(())
     }
 
     // ----- prompts -----------------------------------------------------
@@ -935,6 +994,7 @@ impl App {
     /// Picks up a finished refresh or add, if any, and reloads.
     pub fn poll_refresh(&mut self) -> Result<(), String> {
         self.poll_add()?;
+        self.poll_article()?;
         let Some(rx) = &self.refresh_rx else {
             return Ok(());
         };
@@ -1166,6 +1226,18 @@ mod tests {
         assert_eq!(a.article_text(40), "body");
         a.item_sel = 3;
         assert_eq!(a.article_text(40), "body");
+    }
+
+    #[test]
+    fn full_text_replaces_the_summary_and_its_links() {
+        let mut a = app();
+        assert!(!a.showing_full_text());
+        a.items[0].content_html =
+            Some("<p>Full <a href=\"https://x.example/full\">story</a></p>".into());
+        a.article_cache = None;
+        assert!(a.showing_full_text());
+        assert!(a.article_text(40).starts_with("Full "));
+        assert_eq!(a.article_links(), ["https://x.example/full"]);
     }
 
     #[test]

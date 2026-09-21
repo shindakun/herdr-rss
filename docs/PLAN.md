@@ -57,9 +57,11 @@ a URL that spans rows. ratatui has no hyperlink attribute; the rewrite
 repeats the text it drew, so its buffer stays right. Relative footnote URLs
 resolve against the item link. `1`..`9` opens link `n`.
 
-`f` fetches the page and extracts the article with `dom_smoothie`, a Rust
-port of Mozilla's readability.js: page HTML and URL in, title, byline, and
-clean HTML out, rendered by `html2text`. For feeds that ship a summary only.
+`f` fetches the page on the worker thread and extracts the article with
+`dom_smoothie`, a Rust port of Mozilla's readability.js: page HTML and URL
+in, clean HTML out. The HTML is stored in `items.content_html` and takes the
+place of the summary for rendering and for the numbered links. The header
+gains `full text`. `show --full` does the same on the CLI.
 
 Opening an item marks it read: `Enter`, click, or wheel into the article.
 Moving the selection does not.
@@ -149,7 +151,7 @@ runs the same on Ubuntu and macOS.
 4. Done. Auto refresh, failed-feed error in the status line.
 5. Done. Search, add and delete from the pane, `remove`, OPML, comments in
    feeds.txt.
-6. `f` full-article fetch. First release.
+6. Done. `f` full-article fetch, `show --full`. Release 0.1.0.
 7. Launcher focus and close paths tried from a bound key.
 
 ## Not in v1

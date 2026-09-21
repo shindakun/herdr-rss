@@ -20,6 +20,7 @@ Every subcommand takes `--json`. Items have a 16-character `id`.
 | `herdr-rss list --unread --limit 20 --json` | Unread items, newest first |
 | `herdr-rss list --feed URL --json` | One feed's items |
 | `herdr-rss show ID --json` | One item with its `summary_html`; without `--json`, as text |
+| `herdr-rss show ID --full` | Fetch the item's page and show the extracted article |
 | `herdr-rss mark ID...` | Mark read |
 | `herdr-rss star ID...` | Toggle a star |
 | `herdr-rss add URL --name N --group G` | Fetch the URL and add it; fails if it is not a feed |

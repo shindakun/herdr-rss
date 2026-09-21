@@ -24,6 +24,7 @@ pub const HELP: &[(&str, &str)] = &[
     ("o", "open item in browser"),
     ("1 … 9", "open that numbered link from the article"),
     ("y", "copy item link"),
+    ("f", "fetch the full article from its page"),
     ("Z", "toggle zoom"),
     ("?", "this help"),
     ("q", "quit"),
@@ -114,6 +115,7 @@ pub fn handle(app: &mut App, key: KeyEvent) -> Result<(), String> {
         KeyCode::Char('o') => app.open_in_browser(),
         KeyCode::Char(c @ '1'..='9') => app.open_link(c as usize - '0' as usize),
         KeyCode::Char('y') => app.copy_link(),
+        KeyCode::Char('f') => app.fetch_article(),
         KeyCode::Char('Z') => app.toggle_zoom(),
         KeyCode::Char('?') => app.show_help = true,
         _ => {}

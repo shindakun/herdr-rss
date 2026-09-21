@@ -39,7 +39,8 @@ grep -A1 '^name = "herdr-rss"' Cargo.lock | grep -q "version = \"$version\""
 cargo build --release
 
 git add Cargo.toml Cargo.lock herdr-plugin.toml
-git commit -q -m "Release $version"
+# The manifests may already carry the version; then there is nothing to commit.
+git diff --cached --quiet || git commit -q -m "Release $version"
 trap - EXIT
 git tag -a "v$version" -m "herdr-rss $version"
 git push -q origin main "v$version"

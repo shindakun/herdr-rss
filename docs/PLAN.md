@@ -152,7 +152,8 @@ runs the same on Ubuntu and macOS.
 5. Done. Search, add and delete from the pane, `remove`, OPML, comments in
    feeds.txt.
 6. Done. `f` full-article fetch, `show --full`. Release 0.1.0.
-7. Launcher focus and close paths tried from a bound key.
+7. Done. Launcher open, focus, and close paths run through the action in a
+   live session.
 
 ## Not in v1
 

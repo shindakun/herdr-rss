@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Launcher: pane ids are hex (`wA:p3`); the id check rejected them, so every press opened a new pane instead of focusing or closing.
+
 ## 0.1.0 (2026-09-20)
 
 First release.

@@ -76,16 +76,17 @@ fn canonical(p: &Path) -> std::path::PathBuf {
     std::fs::canonicalize(p).unwrap_or_else(|_| p.to_path_buf())
 }
 
-/// A pane id is `w<n>:p<n>`. Anything else never reaches an argv.
+/// A pane id is `w<hex>:p<hex>`, as in `wA:p3`. Anything else never reaches
+/// an argv.
 fn safe_pane_id(id: &str) -> bool {
     let Some((w, p)) = id.split_once(':') else {
         return false;
     };
-    let digits = |s: &str, prefix: char| {
+    let hex = |s: &str, prefix: char| {
         s.strip_prefix(prefix)
-            .is_some_and(|d| !d.is_empty() && d.bytes().all(|b| b.is_ascii_digit()))
+            .is_some_and(|d| !d.is_empty() && d.bytes().all(|b| b.is_ascii_hexdigit()))
     };
-    digits(w, 'w') && digits(p, 'p')
+    hex(w, 'w') && hex(p, 'p')
 }
 
 #[cfg(test)]
@@ -144,7 +145,9 @@ mod tests {
     #[test]
     fn pane_id_guard() {
         assert!(safe_pane_id("w3:p19"));
+        assert!(safe_pane_id("wA:pF"), "ids are hex");
         assert!(!safe_pane_id("w3:p"));
+        assert!(!safe_pane_id("wG:p1"));
         assert!(!safe_pane_id("--rm"));
         assert!(!safe_pane_id("w3:p19 --on"));
     }

@@ -1,6 +1,6 @@
 [package]
 name = "herdr-rss"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 description = "Herdr plugin that reads RSS, Atom, and JSON feeds in a split or zoomed pane"
 license = "MIT"

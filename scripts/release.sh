@@ -5,8 +5,7 @@
 #   scripts/release.sh 0.1.1
 #
 # Requires a clean tree on main, a "## <version> (YYYY-MM-DD)" heading in
-# CHANGELOG.md,
-# cargo, gh (logged in), and the tools make check needs.
+# CHANGELOG.md, cargo, gh (logged in), and the tools make check needs.
 set -euo pipefail
 
 version="${1:-}"

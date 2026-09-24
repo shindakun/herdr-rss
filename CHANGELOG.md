@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.2 (2026-09-23)
 
 - The launcher's pane id check accepted hex; Herdr numbers ids in base 32 over `123456789ABCDEFGHJKMNPQRSTVWXYZ0`, so a pane in workspace `wK` was rejected and every keypress opened a new pane. 0.1.1 fixed this for `wA` through `wF` only.
 - Focus and close go through `herdr plugin pane focus` and `plugin pane close` instead of a `pane zoom --on` / `--off` cycle.

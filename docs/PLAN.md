@@ -17,9 +17,13 @@ current tab: open, else focus, else close.
 The launcher finds its own pane in `herdr pane list` by `label == "Feeds"`
 and `cwd == HERDR_PLUGIN_ROOT`, within the focused pane's `tab_id`. The
 decision comes from `herdr-rss --launch-decision`, which reads the pane list
-on stdin, so it is unit tested. Focus is `pane zoom <id> --on` then `--off`;
-Herdr has no focus-by-id. Close is `pane close <id>`. Any failure falls
-through to open.
+on stdin. Focus is `plugin pane focus <id>`, close is `plugin pane close
+<id>`. Any failure falls through to open.
+
+Ids are base 32 over `123456789ABCDEFGHJKMNPQRSTVWXYZ0` (`PUBLIC_ID_ALPHABET`
+in herdr's `src/workspace.rs`), so the tenth workspace is `wA` and the
+thirty-third pane is `p1B`. The guard that keeps an id out of an argv
+accepts those digits and nothing else.
 
 ## Layout
 

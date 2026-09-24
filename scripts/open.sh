@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Open the reader beside the focused pane. Within the current tab: no reader
 # pane, open one; one open but unfocused, focus it; the reader focused, close
-# it. Focus is `pane zoom --on` then `--off`; Herdr has no focus-by-id. The
-# binary makes the decision from `pane list` JSON. Any failure means open.
+# it. The binary makes the decision from `pane list` JSON. Any failure means
+# open.
 set -uo pipefail
 
 herdr_bin="${HERDR_BIN_PATH:-herdr}"
@@ -20,12 +20,10 @@ fi
 
 case "$decision" in
   "FOCUS "*)
-    pid="${decision#FOCUS }"
-    "$herdr_bin" pane zoom "$pid" --on >/dev/null 2>&1 || true
-    exec "$herdr_bin" pane zoom "$pid" --off
+    exec "$herdr_bin" plugin pane focus "${decision#FOCUS }"
     ;;
   "CLOSE "*)
-    exec "$herdr_bin" pane close "${decision#CLOSE }"
+    exec "$herdr_bin" plugin pane close "${decision#CLOSE }"
     ;;
 esac
 

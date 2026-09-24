@@ -76,17 +76,22 @@ fn canonical(p: &Path) -> std::path::PathBuf {
     std::fs::canonicalize(p).unwrap_or_else(|_| p.to_path_buf())
 }
 
-/// A pane id is `w<hex>:p<hex>`, as in `wA:p3`. Anything else never reaches
-/// an argv.
+/// The digits Herdr encodes workspace, tab, and pane numbers in: base 32
+/// over digits and uppercase letters, less I, L, O, and U
+/// (`herdr/src/workspace.rs`, `PUBLIC_ID_ALPHABET`).
+const ID_DIGITS: &[u8] = b"123456789ABCDEFGHJKMNPQRSTVWXYZ0";
+
+/// A pane id is `w<n>:p<n>` in those digits, as in `wK:p4` or `wA:p1B`.
+/// Anything else never reaches an argv.
 fn safe_pane_id(id: &str) -> bool {
     let Some((w, p)) = id.split_once(':') else {
         return false;
     };
-    let hex = |s: &str, prefix: char| {
+    let number = |s: &str, prefix: char| {
         s.strip_prefix(prefix)
-            .is_some_and(|d| !d.is_empty() && d.bytes().all(|b| b.is_ascii_hexdigit()))
+            .is_some_and(|d| !d.is_empty() && d.bytes().all(|b| ID_DIGITS.contains(&b)))
     };
-    hex(w, 'w') && hex(p, 'p')
+    number(w, 'w') && number(p, 'p')
 }
 
 #[cfg(test)]
@@ -145,9 +150,17 @@ mod tests {
     #[test]
     fn pane_id_guard() {
         assert!(safe_pane_id("w3:p19"));
-        assert!(safe_pane_id("wA:pF"), "ids are hex");
+        assert!(
+            safe_pane_id("wK:p4"),
+            "past the ninth workspace ids use letters"
+        );
+        assert!(
+            safe_pane_id("wA:p1B"),
+            "past the 32nd pane they get two digits"
+        );
         assert!(!safe_pane_id("w3:p"));
-        assert!(!safe_pane_id("wG:p1"));
+        assert!(!safe_pane_id("wI:p1"), "I, L, O, and U are not id digits");
+        assert!(!safe_pane_id("wa:p1"), "digits are uppercase");
         assert!(!safe_pane_id("--rm"));
         assert!(!safe_pane_id("w3:p19 --on"));
     }
